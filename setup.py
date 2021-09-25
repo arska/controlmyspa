@@ -14,7 +14,9 @@ def read_file(filename):
 
 setup(
     name="controlmyspa",
-    version_config=True,
+    version_config = {
+        "dirty_template": "{tag}",
+    },
     description="Get metrics and control Balboa Controlmyspa whirlpool",
     long_description=read_file("README.md"),
     long_description_content_type="text/markdown",
