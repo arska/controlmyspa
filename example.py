@@ -5,7 +5,6 @@ use e.g. with "python example.py user@example.com myverysecretpassword"
 """
 import argparse
 import logging
-import pprint
 
 from controlmyspa import ControlMySpa
 

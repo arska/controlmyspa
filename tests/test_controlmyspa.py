@@ -1,8 +1,5 @@
-import datetime
-import json
 import unittest
 import base64
-import pprint
 
 from controlmyspa import ControlMySpa
 import responses
@@ -603,16 +600,18 @@ class ControlMySpaTestCase(unittest.TestCase):
     def test_blower(self):
         cms = ControlMySpa(self.exampleusername, self.examplepassword)
         # my test data contains no blower. creating a synthetic one to be able to test
-        cms._info["currentState"]["components"].append({
-                        "availableValues": ["OFF", "HIGH"],
-                        "componentType": "BLOWER",
-                        "materialType": "BLOWER",
-                        "name": "BLOWER",
-                        "port": "0",
-                        "registeredTimestamp": "2021-09-14T17:35:17.430+0000",
-                        "targetValue": "OFF",
-                        "value": "OFF",
-                    })
+        cms._info["currentState"]["components"].append(
+            {
+                "availableValues": ["OFF", "HIGH"],
+                "componentType": "BLOWER",
+                "materialType": "BLOWER",
+                "name": "BLOWER",
+                "port": "0",
+                "registeredTimestamp": "2021-09-14T17:35:17.430+0000",
+                "targetValue": "OFF",
+                "value": "OFF",
+            }
+        )
         self.assertEqual(cms.blowers, [False])
         self.assertEqual(cms.get_blower(0), False)
         # manually enable
@@ -719,6 +718,7 @@ class ControlMySpaTestCase(unittest.TestCase):
     def test_serialnumber(self):
         cms = ControlMySpa(self.exampleusername, self.examplepassword)
         self.assertEqual(cms.get_serial(), self.info["serialNumber"])
+
 
 if __name__ == "__main__":
     unittest.main()
