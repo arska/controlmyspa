@@ -716,6 +716,9 @@ class ControlMySpaTestCase(unittest.TestCase):
         ]
         self.assertEqual(cms.lights, [])
 
+    def test_serialnumber(self):
+        cms = ControlMySpa(self.exampleusername, self.examplepassword)
+        self.assertEqual(cms.get_serial(), self.info["serialNumber"])
 
 if __name__ == "__main__":
     unittest.main()

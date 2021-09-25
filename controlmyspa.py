@@ -346,3 +346,9 @@ class ControlMySpa:
         """
         for i, state in enumerate(array):
             self.set_light(i, state)
+
+    def get_serial(self):
+        """
+        Get spa serial number
+        """
+        return self._info["serialNumber"]
