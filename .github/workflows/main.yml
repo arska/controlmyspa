@@ -23,8 +23,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install tox tox-gh-actions
     - name: Test with tox
+      env:
+        CODECOV_TOKEN: "889b90e8-e5a8-4139-aef6-87e6f2e1a0a4"
       run: tox
-      
       
   package:
     name: "Build & verify package"
