@@ -33,7 +33,7 @@ setup(
     author="Aarno Aukia",
     author_email="aarno@aukia.com",
     license="MIT",
-    python_requires=">=3.5",
+    python_requires=">=3.6",
     extras_require={"dev": ["tox"]},
     install_requires=["requests>=2"],
     setup_requires=["setuptools-git-versioning"],
