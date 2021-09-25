@@ -10,7 +10,7 @@ __pycache__/
 /venv/
 
 # packaging
-/daikinapi.egg-info/
+/*.egg-info/
 /dist/
 /build/
 
@@ -21,3 +21,5 @@ __pycache__/
 /.tox/
 /.coverage
 /htmlcov/
+coverage.xml
+
