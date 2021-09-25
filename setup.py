@@ -4,8 +4,6 @@ controlmyspa python module manifest
 from os.path import abspath, dirname, join
 from setuptools import setup
 
-__version__ = "1.0.0"
-
 
 def read_file(filename):
     """Get the contents of a file"""
@@ -16,7 +14,7 @@ def read_file(filename):
 
 setup(
     name="controlmyspa",
-    version=__version__,
+    version_config=True,
     description="Get metrics and control Balboa Controlmyspa whirlpool",
     long_description=read_file("README.md"),
     long_description_content_type="text/markdown",
@@ -39,4 +37,5 @@ setup(
     python_requires=">=3.5",
     extras_require={"dev": ["tox"]},
     install_requires=["requests>=2"],
+    setup_requires=['setuptools-git-versioning'],
 )
