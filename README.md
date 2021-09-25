@@ -1,5 +1,7 @@
 # Balboa ControlMySpa Whirlpool cloud API
 
+Python API for ControlMySpa.com cloud-controlled whirlpools
+
 ## Usage
 
 see example.py for runnable example
