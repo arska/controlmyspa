@@ -3,6 +3,7 @@ Python module to get metrics from and control Balboa ControlMySpa whirlpools
 """
 
 import requests
+from json import dumps
 
 
 class ControlMySpa:
@@ -156,6 +157,37 @@ class ControlMySpa:
         return response.json()
 
     @property
+    def heater_mode(self):
+        """
+        Get run mode of spa READY (True) or REST (False)
+        """
+        # update fresh info
+        # self._get_info()
+        return self._info["currentState"]["heaterMode"] == "READY"
+
+    @heater_mode.setter
+    def heater_mode(self, heater_mode=True):
+        """
+        Set run mode range READY or REST
+        :param heater_mode: True for READY, False for REST
+        """
+        if (self._info["currentState"]["heaterMode"] == "REST") and heater_mode or (
+                self._info["currentState"]["heaterMode"] == "READY" and not heater_mode):
+            response = requests.post(
+                "https://iot.controlmyspa.com/mobile/control/"
+                + self._info["_id"]
+                + "/toggleHeaterMode",
+                json={"originatorId": ""},
+                headers={"Authorization": "Bearer " + self._token["access_token"]},
+            )
+            response.raise_for_status()
+            # update the local info
+            self._get_info()
+            return response.json()
+        else:
+            return dumps(self._info)
+
+    @property
     def panel_lock(self):
         """
         Get panel lock status, Locked = True, unlocked = False
@@ -236,6 +268,28 @@ class ControlMySpa:
         """
         for i, state in enumerate(array):
             self.set_jet(i, state)
+
+    @property
+    def circulations(self):
+        """
+        get an array of circulation pumps True/False (ON/OFF) status (just information, cannot be set)
+        """
+        return [
+            x["value"] == "HIGH"
+            for x in self._info["currentState"]["components"]
+            if x["componentType"] == "CIRCULATION_PUMP"
+        ]
+
+    @property
+    def ozon_generators(self):
+        """
+        get an array of ozone generators True/False (ON/OFF) status (just information, cannot be set)
+        """
+        return [
+            x["value"] == "ON"
+            for x in self._info["currentState"]["components"]
+            if x["componentType"] == "OZONE"
+        ]
 
     def get_blower(self, blower_number=0):
         """
