@@ -1,6 +1,6 @@
-# Balboa ControlMySpa Whirlpool cloud API
+# Balboa ControlMySpa Whirlpool cloud API
 
-[![Python package](https://github.com/arska/controlmyspa/actions/workflows/main.yml/badge.svg)](https://github.com/arska/controlmyspa/actions/workflows/main.yml)
+[![Tests](https://github.com/arska/controlmyspa/actions/workflows/main.yml/badge.svg)](https://github.com/arska/controlmyspa/actions/workflows/main.yml)
 [![codecov](https://codecov.io/gh/arska/controlmyspa/branch/main/graph/badge.svg?token=H2107AXHOX)](https://codecov.io/gh/arska/controlmyspa)
 [![PyPI version](https://badge.fury.io/py/controlmyspa.svg)](https://badge.fury.io/py/controlmyspa)
 
@@ -17,6 +17,6 @@ API = ControlMySpa("user@example.com", "myverysecretpassword")
 pprint.pprint(API._info)
 ```
 
-## References
+## References
 
 Based on the JavaScript library https://gitlab.com/VVlasy/controlmyspajs
