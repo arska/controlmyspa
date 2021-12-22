@@ -3,7 +3,6 @@ Python module to get metrics from and control Balboa ControlMySpa whirlpools
 """
 
 import requests
-from json import dumps
 
 
 class ControlMySpa:
@@ -127,7 +126,6 @@ class ControlMySpa:
         response.raise_for_status()
         # update the local info
         self._get_info()
-        return response.json()
 
     @property
     def temp_range(self):
@@ -154,12 +152,11 @@ class ControlMySpa:
         response.raise_for_status()
         # update the local info
         self._get_info()
-        return response.json()
 
     @property
     def heater_mode(self):
         """
-        Get run mode of spa READY (True) or REST (False)
+        Get heater mode of spa READY (True) or REST (False)
         """
         # update fresh info
         # self._get_info()
@@ -168,11 +165,11 @@ class ControlMySpa:
     @heater_mode.setter
     def heater_mode(self, heater_mode=True):
         """
-        Set run mode range READY or REST
+        Set heater mode READY or REST
         :param heater_mode: True for READY, False for REST
         """
-        if (self._info["currentState"]["heaterMode"] == "REST") and heater_mode or (
-                self._info["currentState"]["heaterMode"] == "READY" and not heater_mode):
+        if self.heater_mode != heater_mode:
+            # toggle the heater mode if current state and the parameter heater_mode differ
             response = requests.post(
                 "https://iot.controlmyspa.com/mobile/control/"
                 + self._info["_id"]
@@ -183,9 +180,6 @@ class ControlMySpa:
             response.raise_for_status()
             # update the local info
             self._get_info()
-            return response.json()
-        else:
-            return dumps(self._info)
 
     @property
     def panel_lock(self):
@@ -212,7 +206,6 @@ class ControlMySpa:
         response.raise_for_status()
         # update the local info
         self._get_info()
-        return response.json()
 
     def get_jet(self, jet_number=0):
         """
@@ -247,7 +240,6 @@ class ControlMySpa:
         response.raise_for_status()
         # update the local info
         self._get_info()
-        return response.json()
 
     @property
     def jets(self):
@@ -270,9 +262,10 @@ class ControlMySpa:
             self.set_jet(i, state)
 
     @property
-    def circulations(self):
+    def circulation_pumps(self):
         """
-        get an array of circulation pumps True/False (ON/OFF) status (just information, cannot be set)
+        get an array of circulation pumps True/False (ON/OFF) status
+        (just information, cannot be set)
         """
         return [
             x["value"] == "HIGH"
@@ -281,9 +274,10 @@ class ControlMySpa:
         ]
 
     @property
-    def ozon_generators(self):
+    def ozone_generators(self):
         """
-        get an array of ozone generators True/False (ON/OFF) status (just information, cannot be set)
+        get an array of ozone generators True/False (ON/OFF) status
+        (just information, cannot be set)
         """
         return [
             x["value"] == "ON"
@@ -324,7 +318,6 @@ class ControlMySpa:
         response.raise_for_status()
         # update the local info
         self._get_info()
-        return response.json()
 
     @property
     def blowers(self):
@@ -379,7 +372,6 @@ class ControlMySpa:
         response.raise_for_status()
         # update the local info
         self._get_info()
-        return response.json()
 
     @property
     def lights(self):
