@@ -7,7 +7,6 @@ import argparse
 import logging
 
 from controlmyspa import ControlMySpa
-import json
 import pprint
 
 PARSER = argparse.ArgumentParser(description="Get metrics from Balboa Controlmyspa")
@@ -34,11 +33,11 @@ API = ControlMySpa(ARGS.email, ARGS.password)
 info = API._info
 
 # remove potentially sensitive information
-del(info['owner'])
-del(info['p2pAPSSID'])
-del(info['serialNumber'])
-del(info['_id'])
-del(info['_links'])
+del info["owner"]
+del info["p2pAPSSID"]
+del info["serialNumber"]
+del info["_id"]
+del info["_links"]
 
 # print remaining data
 pprint.pprint(API._info)
