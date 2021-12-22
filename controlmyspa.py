@@ -126,7 +126,6 @@ class ControlMySpa:
         response.raise_for_status()
         # update the local info
         self._get_info()
-        return response.json()
 
     @property
     def temp_range(self):
@@ -153,7 +152,34 @@ class ControlMySpa:
         response.raise_for_status()
         # update the local info
         self._get_info()
-        return response.json()
+
+    @property
+    def heater_mode(self):
+        """
+        Get heater mode of spa READY (True) or REST (False)
+        """
+        # update fresh info
+        # self._get_info()
+        return self._info["currentState"]["heaterMode"] == "READY"
+
+    @heater_mode.setter
+    def heater_mode(self, heater_mode=True):
+        """
+        Set heater mode READY or REST
+        :param heater_mode: True for READY, False for REST
+        """
+        if self.heater_mode != heater_mode:
+            # toggle the heater mode if current state and the parameter heater_mode differ
+            response = requests.post(
+                "https://iot.controlmyspa.com/mobile/control/"
+                + self._info["_id"]
+                + "/toggleHeaterMode",
+                json={"originatorId": ""},
+                headers={"Authorization": "Bearer " + self._token["access_token"]},
+            )
+            response.raise_for_status()
+            # update the local info
+            self._get_info()
 
     @property
     def panel_lock(self):
@@ -180,7 +206,6 @@ class ControlMySpa:
         response.raise_for_status()
         # update the local info
         self._get_info()
-        return response.json()
 
     def get_jet(self, jet_number=0):
         """
@@ -215,7 +240,6 @@ class ControlMySpa:
         response.raise_for_status()
         # update the local info
         self._get_info()
-        return response.json()
 
     @property
     def jets(self):
@@ -236,6 +260,30 @@ class ControlMySpa:
         """
         for i, state in enumerate(array):
             self.set_jet(i, state)
+
+    @property
+    def circulation_pumps(self):
+        """
+        get an array of circulation pumps True/False (ON/OFF) status
+        (just information, cannot be set)
+        """
+        return [
+            x["value"] == "HIGH"
+            for x in self._info["currentState"]["components"]
+            if x["componentType"] == "CIRCULATION_PUMP"
+        ]
+
+    @property
+    def ozone_generators(self):
+        """
+        get an array of ozone generators True/False (ON/OFF) status
+        (just information, cannot be set)
+        """
+        return [
+            x["value"] == "ON"
+            for x in self._info["currentState"]["components"]
+            if x["componentType"] == "OZONE"
+        ]
 
     def get_blower(self, blower_number=0):
         """
@@ -270,7 +318,6 @@ class ControlMySpa:
         response.raise_for_status()
         # update the local info
         self._get_info()
-        return response.json()
 
     @property
     def blowers(self):
@@ -325,7 +372,6 @@ class ControlMySpa:
         response.raise_for_status()
         # update the local info
         self._get_info()
-        return response.json()
 
     @property
     def lights(self):

@@ -719,6 +719,86 @@ class ControlMySpaTestCase(unittest.TestCase):
         cms = ControlMySpa(self.exampleusername, self.examplepassword)
         self.assertEqual(cms.get_serial(), self.info["serialNumber"])
 
+    def test_heater_mode(self):
+        cms = ControlMySpa(self.exampleusername, self.examplepassword)
+        #  default heater mode READY
+        self.assertEqual(cms.heater_mode, True)
+        # set heater mode REST
+        cms._info["currentState"]["heaterMode"] = "REST"
+        self.assertEqual(cms.heater_mode, False)
+
+    def test_heater_mode_set(self):
+        cms = ControlMySpa(self.exampleusername, self.examplepassword)
+        self.responses.add(
+            responses.POST,
+            "https://iot.controlmyspa.com/mobile/control/0123456789abcdef01234567/toggleHeaterMode",
+            match=[responses.matchers.json_params_matcher({"originatorId": ""})],
+            json={},
+        )
+        # test READY -> READY (no-op)
+        cms.heater_mode = True
+
+        # test READY -> REST
+        cms.heater_mode = False
+        cms._info["currentState"]["heaterMode"] = "REST"
+
+        # test REST -> REST (no-op)
+        cms.heater_mode = False
+
+        # test REST -> READY
+        cms.heater_mode = True
+        cms._info["currentState"]["heaterMode"] = "READY"
+
+        #  check that toggle was called exactly 2 times and not for the no-ops
+        self.assertTrue(
+            self.responses.assert_call_count(
+                "https://iot.controlmyspa.com/mobile/control/0123456789abcdef01234567/toggleHeaterMode",
+                2,
+            )
+        )
+
+    def test_circulation_pumps(self):
+        cms = ControlMySpa(self.exampleusername, self.examplepassword)
+        #  default all circulation pumps are on
+        self.assertEqual(cms.circulation_pumps, [True])
+
+        # manually enable all lights
+        for component in cms._info["currentState"]["components"]:
+            if component["componentType"] == "CIRCULATION_PUMP":
+                component["value"] = "OFF"
+        self.assertEqual(cms.circulation_pumps, [False])
+
+    def test_circulation_pumps_empty(self):
+        cms = ControlMySpa(self.exampleusername, self.examplepassword)
+        # test correct handling if there were no jets at all
+        cms._info["currentState"]["components"] = [
+            x
+            for x in cms._info["currentState"]["components"]
+            if x["componentType"] != "CIRCULATION_PUMP"
+        ]
+        self.assertEqual(cms.circulation_pumps, [])
+
+    def test_ozone_generators(self):
+        cms = ControlMySpa(self.exampleusername, self.examplepassword)
+        #  default all circulation pumps are on
+        self.assertEqual(cms.ozone_generators, [True])
+
+        # manually enable all lights
+        for component in cms._info["currentState"]["components"]:
+            if component["componentType"] == "OZONE":
+                component["value"] = "OFF"
+        self.assertEqual(cms.ozone_generators, [False])
+
+    def test_ozone_generators_empty(self):
+        cms = ControlMySpa(self.exampleusername, self.examplepassword)
+        # test correct handling if there were no jets at all
+        cms._info["currentState"]["components"] = [
+            x
+            for x in cms._info["currentState"]["components"]
+            if x["componentType"] != "OZONE"
+        ]
+        self.assertEqual(cms.ozone_generators, [])
+
 
 if __name__ == "__main__":
     unittest.main()

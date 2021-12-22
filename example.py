@@ -29,6 +29,7 @@ else:
 logging.debug("starting with arguments: %s", ARGS)
 
 API = ControlMySpa(ARGS.email, ARGS.password)
+
 print("current temp", API.current_temp)
 print("desired temp", API.desired_temp)
 
@@ -50,3 +51,9 @@ print("jets", API.jets)
 # API.set_jet(2, not API.get_jet(2))
 
 print("blowers", API.blowers)
+
+print("heater", API.heater_mode)
+
+print("circulation_pumps", API.circulation_pumps)
+
+print("ozone_generators", API.ozone_generators)
