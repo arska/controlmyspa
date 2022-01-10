@@ -18,7 +18,7 @@ responses==0.17.0
     # via -r requirements.in
 six==1.16.0
     # via responses
-urllib3==1.26.7
+urllib3==1.26.8
     # via
     #   requests
     #   responses
