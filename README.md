@@ -1,10 +1,13 @@
-# Balboa ControlMySpa Whirlpool cloud API
+# Balboa ControlMySpa™ cloud API for hot tub spa systems
 
 [![Tests](https://github.com/arska/controlmyspa/actions/workflows/main.yml/badge.svg)](https://github.com/arska/controlmyspa/actions/workflows/main.yml)
 [![codecov](https://codecov.io/gh/arska/controlmyspa/branch/main/graph/badge.svg?token=H2107AXHOX)](https://codecov.io/gh/arska/controlmyspa)
 [![PyPI version](https://badge.fury.io/py/controlmyspa.svg)](https://badge.fury.io/py/controlmyspa)
 
-Python API for ControlMySpa.com cloud-controlled whirlpools
+Python API for ControlMySpa.com cloud-controlled of Balboa spa control systems for hot tubs.
+
+* https://www.balboawatergroup.com/ControlMySpa
+* https://controlmyspa.com
 
 ## Usage
 
