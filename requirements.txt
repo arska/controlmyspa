@@ -14,7 +14,7 @@ requests==2.27.1
     # via
     #   -r requirements.in
     #   responses
-responses==0.17.0
+responses==0.22.0
     # via -r requirements.in
 six==1.16.0
     # via responses
