@@ -32,7 +32,9 @@ class ControlMySpa:
         """
         Get URL and basic auth to log in to IDM
         """
-        response = requests.get("https://iot.controlmyspa.com/idm/tokenEndpoint")
+        response = requests.get(
+            "https://iot.controlmyspa.com/idm/tokenEndpoint", timeout=10
+        )
         response.raise_for_status()
         self._idm = response.json()
         return self._idm
@@ -49,7 +51,11 @@ class ControlMySpa:
                 "scope": "openid user_name",
                 "username": self._email,
             },
-            auth=(self._idm["mobileClientId"], self._idm["mobileClientSecret"]),
+            auth=(
+                self._idm["mobileClientId"],
+                self._idm["mobileClientSecret"],
+            ),
+            timeout=10,
         )
         response.raise_for_status()
         self._token = response.json()
@@ -62,6 +68,7 @@ class ControlMySpa:
         response = requests.get(
             self._idm["_links"]["whoami"]["href"],
             headers={"Authorization": "Bearer " + self._token["access_token"]},
+            timeout=10,
         )
         response.raise_for_status()
         self._user = response.json()
@@ -75,6 +82,7 @@ class ControlMySpa:
             "https://iot.controlmyspa.com/mobile/spas/search/findByUsername",
             params={"username": self._email},
             headers={"Authorization": "Bearer " + self._token["access_token"]},
+            timeout=10,
         )
         response.raise_for_status()
         self._info = response.json()
@@ -122,6 +130,7 @@ class ControlMySpa:
             + "/setDesiredTemp",
             json={"desiredTemp": temperature},
             headers={"Authorization": "Bearer " + self._token["access_token"]},
+            timeout=10,
         )
         response.raise_for_status()
         # update the local info
@@ -148,6 +157,7 @@ class ControlMySpa:
             + "/setTempRange",
             json={"desiredState": ("HIGH" if temp_range else "LOW")},
             headers={"Authorization": "Bearer " + self._token["access_token"]},
+            timeout=10,
         )
         response.raise_for_status()
         # update the local info
@@ -176,6 +186,7 @@ class ControlMySpa:
                 + "/toggleHeaterMode",
                 json={"originatorId": ""},
                 headers={"Authorization": "Bearer " + self._token["access_token"]},
+                timeout=10,
             )
             response.raise_for_status()
             # update the local info
@@ -202,6 +213,7 @@ class ControlMySpa:
             + "/setPanel",
             json={"desiredState": ("LOCK_PANEL" if lock else "UNLOCK_PANEL")},
             headers={"Authorization": "Bearer " + self._token["access_token"]},
+            timeout=10,
         )
         response.raise_for_status()
         # update the local info
@@ -236,6 +248,7 @@ class ControlMySpa:
                 "originatorId": "optional-Jet",
             },
             headers={"Authorization": "Bearer " + self._token["access_token"]},
+            timeout=10,
         )
         response.raise_for_status()
         # update the local info
@@ -314,6 +327,7 @@ class ControlMySpa:
                 "originatorId": "optional-Blower",
             },
             headers={"Authorization": "Bearer " + self._token["access_token"]},
+            timeout=10,
         )
         response.raise_for_status()
         # update the local info
@@ -368,6 +382,7 @@ class ControlMySpa:
                 "originatorId": "optional-Light",
             },
             headers={"Authorization": "Bearer " + self._token["access_token"]},
+            timeout=10,
         )
         response.raise_for_status()
         # update the local info
