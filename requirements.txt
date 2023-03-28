@@ -18,7 +18,7 @@ responses==0.23.1
     # via -r requirements.in
 toml==0.10.2
     # via responses
-types-toml==0.10.8.5
+types-toml==0.10.8.6
     # via responses
 urllib3==1.26.15
     # via
