@@ -14,7 +14,7 @@ requests==2.31.0
     # via
     #   -r requirements.in
     #   responses
-responses==0.23.1
+responses==0.23.3
     # via -r requirements.in
 toml==0.10.2
     # via responses
