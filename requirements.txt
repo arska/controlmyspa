@@ -20,7 +20,7 @@ toml==0.10.2
     # via responses
 types-toml==0.10.8.7
     # via responses
-urllib3==1.26.16
+urllib3==1.26.17
     # via
     #   requests
     #   responses
