@@ -30,6 +30,8 @@ logging.debug("starting with arguments: %s", ARGS)
 
 API = ControlMySpa(ARGS.email, ARGS.password)
 
+print("online", API.online)
+
 print("current temp", API.current_temp)
 print("desired temp", API.desired_temp)
 

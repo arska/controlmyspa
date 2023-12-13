@@ -433,3 +433,10 @@ class ControlMySpa:
         Get spa serial number
         """
         return self._info["serialNumber"]
+
+    @property
+    def online(self):
+        """
+        Get the spa online status
+        """
+        return self._info["online"]

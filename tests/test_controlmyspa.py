@@ -799,6 +799,11 @@ class ControlMySpaTestCase(unittest.TestCase):
         ]
         self.assertEqual(cms.ozone_generators, [])
 
+    def test_online(self):
+        cms = ControlMySpa(self.exampleusername, self.examplepassword)
+        # in the example dataset the spa is online
+        self.assertEqual(cms.online, True)
+
 
 if __name__ == "__main__":
     unittest.main()
