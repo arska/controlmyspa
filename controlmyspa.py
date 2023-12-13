@@ -3,6 +3,7 @@ Python module to get metrics from and control Balboa ControlMySpa whirlpools
 """
 
 import requests
+import certifi
 
 
 class ControlMySpa:
@@ -21,6 +22,25 @@ class ControlMySpa:
         """
         self._email = email
         self._password = password
+
+        """
+        2023-12-13: iot.controlmyspa.com has a new TLS certificate, probably since
+        June 2023. This certificate is signed by digicert, but there is an intermediate
+        certificate missing in the python certifi trust store and the server does not
+        provide it (anymore?). Instead of disabling the TLS certificate validation, we
+        download the intermediate certificate from digicert over a successfully
+        verified TLS connection and add it to the local trust store. Sorry for the hack."""
+        try:
+            self._get_idm()
+        except requests.exceptions.SSLError:
+            print("TLS certificate missing, downloading")
+            customca = requests.get(
+                "https://cacerts.digicert.com/RapidSSLTLSRSACAG1.crt.pem", timeout=10
+            ).content
+            cafile = certifi.where()
+            with open(cafile, "ab") as outfile:
+                outfile.write(b"\n")
+                outfile.write(customca)
 
         # log in and fetch pool info
         self._get_idm()

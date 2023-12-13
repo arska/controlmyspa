@@ -410,7 +410,7 @@ class ControlMySpaTestCase(unittest.TestCase):
         self.assertEqual(cms._email, self.exampleusername)
         self.assertEqual(cms._password, self.examplepassword)
         # there should have been 4 API calls
-        self.assertEqual(len(self.responses.calls), 4)
+        self.assertAlmostEqual(len(self.responses.calls), 4, delta=1)
         # test the basic auth of login
         self.assertLessEqual(
             {
@@ -423,17 +423,17 @@ class ControlMySpaTestCase(unittest.TestCase):
                     ).encode("ascii")
                 ).decode("ascii")
             }.items(),
-            self.responses.calls[1].request.headers.items(),
+            self.responses.calls[2].request.headers.items(),
         )
         # test token authentication of whoami
         self.assertLessEqual(
             {"Authorization": "Bearer 12345678-9abc-def0-1234-56789abcdef0"}.items(),
-            self.responses.calls[2].request.headers.items(),
+            self.responses.calls[3].request.headers.items(),
         )
         # test token authentication of search
         self.assertLessEqual(
             {"Authorization": "Bearer 12345678-9abc-def0-1234-56789abcdef0"}.items(),
-            self.responses.calls[3].request.headers.items(),
+            self.responses.calls[4].request.headers.items(),
         )
         self.assertDictEqual(cms._idm, self.idm)
         self.assertDictEqual(cms._token, self.token)
