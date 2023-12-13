@@ -440,3 +440,23 @@ class ControlMySpa:
         Get the spa online status
         """
         return self._info["online"]
+
+    def set_chromazon3(self, state=False):
+        """
+        Enable/disable Chromeazon3 lights
+        https://www.balboawatergroup.com/Chromazon3
+        :param state: False to turn off, True to turn on
+        """
+        response = requests.post(
+            "https://iot.controlmyspa.com/mobile/control/"
+            + self._info["_id"]
+            + "/tzl/setPower",
+            json={
+                "desiredState": ("ON" if state else "OFF"),
+            },
+            headers={"Authorization": "Bearer " + self._token["access_token"]},
+            timeout=10,
+        )
+        response.raise_for_status()
+        # update the local info
+        self._get_info()
