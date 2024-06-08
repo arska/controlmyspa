@@ -9,6 +9,8 @@ packages = ["controlmyspa"]
 controlmyspa = "."
 
 [tool.setuptools_scm]
+version_scheme = "python-simplified-semver"
+local_scheme = "no-local-version"
 
 [project]
 name = "controlmyspa"
