@@ -33,7 +33,7 @@ class ControlMySpa:
         try:
             self._get_idm()
         except requests.exceptions.SSLError:
-            print("TLS certificate missing, downloading")
+            print("TLS certificate missing, downloading to " + certifi.where())
             customca = requests.get(
                 "https://cacerts.digicert.com/RapidSSLTLSRSACAG1.crt.pem", timeout=10
             ).content
