@@ -3,6 +3,7 @@ Example usage of controlmyspa module
 
 use e.g. with "python example.py user@example.com myverysecretpassword"
 """
+
 import argparse
 import logging
 
@@ -10,7 +11,11 @@ from controlmyspa import ControlMySpa
 
 PARSER = argparse.ArgumentParser(description="Get metrics from Balboa Controlmyspa")
 PARSER.add_argument(
-    "-v", "--verbose", help="enable debug logging", action="store_true", default=False,
+    "-v",
+    "--verbose",
+    help="enable debug logging",
+    action="store_true",
+    default=False,
 )
 PARSER.add_argument("email", help="email to log in to controlmyspa.com")
 PARSER.add_argument("password", help="password to log in to controlmyspa.com")
@@ -35,7 +40,7 @@ print("online", API.online)
 print("current temp", API.current_temp)
 print("desired temp", API.desired_temp)
 
-# API.desired_temp = 36 if API.desired_temp == 37 else 37
+API.desired_temp = 36 if API.desired_temp == 37 else 37
 
 print("temp range", API.temp_range)
 print("panel lock", API.panel_lock)
