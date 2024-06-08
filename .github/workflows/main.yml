@@ -35,6 +35,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # check out more git history to generate version number https://github.com/pypa/setuptools_scm/issues/480
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
