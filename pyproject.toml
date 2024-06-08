@@ -1,3 +1,36 @@
 [build-system]
-requires = ["setuptools >= 40.6.0", "wheel"]
+requires = ["setuptools>=64", "setuptools_scm>=8"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["controlmyspa"]
+
+[tool.setuptools.package-dir]
+controlmyspa = "."
+
+[tool.setuptools_scm]
+
+[project]
+name = "controlmyspa"
+dynamic = ["version"]
+authors = [
+  { name="Aarno Aukia", email="aarno@aukia.com" },
+]
+description = "Balboa ControlMySpa™ cloud API for hot tub spa systems"
+readme = "README.md"
+requires-python = ">=3.10"
+license={text = "MIT"}
+keywords=["Balboa", "Controlmyspa", "Whirlpool", "API"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+]
+dependencies = [
+    "requests>2"
+]
+
+[project.urls]
+Homepage = "https://github.com/arska/controlmyspa"
+Issues = "https://github.com/arska/controlmyspa/issues"
