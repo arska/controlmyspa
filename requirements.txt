@@ -16,7 +16,7 @@ requests==2.32.3
     # via
     #   -r requirements.in
     #   responses
-responses==0.25.2
+responses==0.25.3
     # via -r requirements.in
 urllib3==2.2.1
     # via
