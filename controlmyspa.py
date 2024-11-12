@@ -41,6 +41,7 @@ class ControlMySpa:
             with open(cafile, "ab") as outfile:
                 outfile.write(b"\n")
                 outfile.write(customca)
+                outfile.close()
 
         # log in and fetch pool info
         self._get_idm()
