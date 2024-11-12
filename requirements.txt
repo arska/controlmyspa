@@ -4,13 +4,13 @@
 #
 #    pip-compile requirements.in
 #
-certifi==2024.6.2
+certifi==2024.8.30
     # via requests
-charset-normalizer==3.3.2
+charset-normalizer==3.4.0
     # via requests
-idna==3.7
+idna==3.10
     # via requests
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via responses
 requests==2.32.3
     # via
@@ -18,7 +18,7 @@ requests==2.32.3
     #   responses
 responses==0.25.3
     # via -r requirements.in
-urllib3==2.2.1
+urllib3==2.2.3
     # via
     #   requests
     #   responses
