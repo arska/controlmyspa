@@ -102,6 +102,7 @@ jobs:
             ./dist/*.tar.gz
             ./dist/*.whl
       - name: Create GitHub Release
+        continue-on-error: true # this fails if the release was created through the web GUI
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: >-
@@ -140,6 +141,7 @@ jobs:
           name: python-package-distributions
           path: dist/
       - name: Publish distribution to TestPyPI
+        continue-on-error: true # upload fails if the version number and hash are the same as a previous release
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
