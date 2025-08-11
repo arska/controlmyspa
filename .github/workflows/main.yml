@@ -13,7 +13,7 @@ jobs:
         python-version: [3.11, 3.12, 3.13]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
@@ -34,7 +34,7 @@ jobs:
     needs: [test]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0 # check out more git history to generate version number https://github.com/pypa/setuptools_scm/issues/480
       - name: Set up Python
