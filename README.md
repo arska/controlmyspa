@@ -26,4 +26,4 @@ pprint.pprint(API._info)
 
 ## References
 
-Based on the JavaScript library https://gitlab.com/VVlasy/controlmyspajs
+Based on the JavaScript library [https://gitlab.com/VVlasy/controlmyspajs](https://github.com/VVlasy/controlmyspajs)
