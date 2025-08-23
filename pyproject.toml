@@ -36,3 +36,7 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/arska/controlmyspa"
 Issues = "https://github.com/arska/controlmyspa/issues"
+
+[tool.pylint]
+generated-members = ["requests.codes.ok"]
+disable = ["fixme", "too-many-instance-attributes", "pointless-string-statement"]

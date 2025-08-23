@@ -3,6 +3,7 @@ Dump the details for a spa for debugging
 
 use e.g. with "python debug.py user@example.com myverysecretpassword"
 """
+
 import argparse
 import logging
 
@@ -11,7 +12,11 @@ import pprint
 
 PARSER = argparse.ArgumentParser(description="Get metrics from Balboa Controlmyspa")
 PARSER.add_argument(
-    "-v", "--verbose", help="enable debug logging", action="store_true", default=False,
+    "-v",
+    "--verbose",
+    help="enable debug logging",
+    action="store_true",
+    default=False,
 )
 PARSER.add_argument("email", help="email to log in to controlmyspa.com")
 PARSER.add_argument("password", help="password to log in to controlmyspa.com")
@@ -33,11 +38,10 @@ API = ControlMySpa(ARGS.email, ARGS.password)
 info = API._info
 
 # remove potentially sensitive information
-del info["owner"]
+del info["ownerId"]
 del info["p2pAPSSID"]
 del info["serialNumber"]
 del info["_id"]
-del info["_links"]
 
 # print remaining data
 pprint.pprint(API._info)
