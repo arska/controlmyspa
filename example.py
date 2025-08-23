@@ -37,13 +37,13 @@ API = ControlMySpa(ARGS.email, ARGS.password)
 
 print("online", API.online)
 
-print("current temp", API.current_temp)
-print("desired temp", API.desired_temp)
+print("current_temp", API.current_temp)
+print("desired_temp", API.desired_temp)
 
-API.desired_temp = 36 if API.desired_temp == 37 else 37
+API.desired_temp = 27 if API.desired_temp == 37 else 37
 
-print("temp range", API.temp_range)
-print("panel lock", API.panel_lock)
+print("temp_range", API.temp_range)
+print("panel_lock", API.panel_lock)
 
 print("lights", API.lights)
 
@@ -64,3 +64,5 @@ print("heater", API.heater_mode)
 print("circulation_pumps", API.circulation_pumps)
 
 print("ozone_generators", API.ozone_generators)
+
+print("serial", API.get_serial())

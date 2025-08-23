@@ -2,8 +2,9 @@
 Python module to get metrics from and control Balboa ControlMySpa whirlpools
 """
 
+import logging
+
 import requests
-import certifi
 
 
 class ControlMySpa:
@@ -14,14 +15,17 @@ class ControlMySpa:
     _email = None
     _password = None
 
-    def __init__(self, email, password):
+    def __init__(self, email, password, spa_offset=0):
         """
         Initialize connection to Balboa ControlMySpa cloud API
         :param email: email address used to log in
         :param password: password used to log in
+        :param spa_offset: which spa to use if the user has access to multiple.
+            Starts and defaults to zero.
         """
         self._email = email
         self._password = password
+        self._spa_offset = spa_offset
 
         """
         2023-12-13: iot.controlmyspa.com has a new TLS certificate, probably since
@@ -30,6 +34,7 @@ class ControlMySpa:
         provide it (anymore?). Instead of disabling the TLS certificate validation, we
         download the intermediate certificate from digicert over a successfully
         verified TLS connection and add it to the local trust store. Sorry for the hack."""
+        """
         try:
             self._get_idm()
         except requests.exceptions.SSLError:
@@ -42,11 +47,10 @@ class ControlMySpa:
                 outfile.write(b"\n")
                 outfile.write(customca)
                 outfile.close()
-
+        """
         # log in and fetch pool info
         self._get_idm()
         self._do_login()
-        self._get_whoami()
         self._get_info()
 
     def _get_idm(self):
@@ -56,7 +60,9 @@ class ControlMySpa:
         response = requests.get(
             "https://iot.controlmyspa.com/idm/tokenEndpoint", timeout=10
         )
-        response.raise_for_status()
+        if response.status_code != requests.codes.ok:
+            logging.error("error from controlmyspa API: %s", response.text)
+            response.raise_for_status()
         self._idm = response.json()
         return self._idm
 
@@ -70,7 +76,7 @@ class ControlMySpa:
                 "grant_type": "password",
                 "password": self._password,
                 "scope": "openid user_name",
-                "username": self._email,
+                "email": self._email,
             },
             auth=(
                 self._idm["mobileClientId"],
@@ -78,41 +84,34 @@ class ControlMySpa:
             ),
             timeout=10,
         )
-        response.raise_for_status()
-        self._token = response.json()
-        return self._token
-
-    def _get_whoami(self):
-        """
-        Get information about the logged in user, the owner
-        """
-        response = requests.get(
-            self._idm["_links"]["whoami"]["href"],
-            headers={"Authorization": "Bearer " + self._token["access_token"]},
-            timeout=10,
-        )
-        response.raise_for_status()
-        self._user = response.json()
-        return self._user
+        if response.status_code != requests.codes.ok:
+            logging.error("error from controlmyspa API: %s", response.text)
+            response.raise_for_status()
+        self._iam = response.json()
+        self._token = self._iam["data"]["accessToken"]
+        return self._iam
 
     def _get_info(self):
         """
         Get all the details for the whirlpool of the logged in user
         """
         response = requests.get(
-            "https://iot.controlmyspa.com/mobile/spas/search/findByUsername",
+            "https://iot.controlmyspa.com/spas",
             params={"username": self._email},
-            headers={"Authorization": "Bearer " + self._token["access_token"]},
+            headers={"Authorization": "Bearer " + self._token},
             timeout=10,
         )
-        response.raise_for_status()
-        self._info = response.json()
+        if response.status_code != requests.codes.ok:
+            logging.error("error from controlmyspa API: %s", response.text)
+            response.raise_for_status()
+        self._list = response.json()
+        self._info = self._list["data"]["spas"][self._spa_offset]
         return self._info
 
     @property
     def current_temp(self):
         """
-        Get current pool temperature
+        Get current pool temperature, in celsius or farenheit according to spa settings
         """
         # update fresh info
         # self._get_info()
@@ -125,7 +124,7 @@ class ControlMySpa:
     @property
     def desired_temp(self):
         """
-        Get desired pool temperature
+        Get desired pool temperature, in celsius or farenheit according to spa settings
         """
         # update fresh info
         # self._get_info()
@@ -139,21 +138,22 @@ class ControlMySpa:
     def desired_temp(self, temperature):
         """
         Set the desired temperature of the whirlpool
-        :param temperature: temperature, in celsius if the whirlpool is set to celsius or
-                        in fahrenheit if the whirlpool is set to fahrenheit
+        :param temperature: temperature, in celsius if the whirlpool is set to celsius
+        or in fahrenheit if the whirlpool is set to fahrenheit
         """
+        # TODO: check high/low ranges and adjust range accordingly
         if self._info["currentState"]["celsius"]:
             # convert to fahrenheit since the API always expects fahrenheit
             temperature = round(temperature / 5 * 9 + 32, 1)
         response = requests.post(
-            "https://iot.controlmyspa.com/mobile/control/"
-            + self._info["_id"]
-            + "/setDesiredTemp",
-            json={"desiredTemp": temperature},
-            headers={"Authorization": "Bearer " + self._token["access_token"]},
+            "https://iot.controlmyspa.com/spa-commands/temperature/value",
+            json={"value": temperature, "spaId": self._info["_id"], "via": "MOBILE"},
+            headers={"Authorization": "Bearer " + self._token},
             timeout=10,
         )
-        response.raise_for_status()
+        if response.status_code != requests.codes.ok:
+            logging.error("error from controlmyspa API: %s", response.text)
+            response.raise_for_status()
         # update the local info
         self._get_info()
 
@@ -173,14 +173,18 @@ class ControlMySpa:
         :param temp_range: True for HIGH, False for LOW
         """
         response = requests.post(
-            "https://iot.controlmyspa.com/mobile/control/"
-            + self._info["_id"]
-            + "/setTempRange",
-            json={"desiredState": ("HIGH" if temp_range else "LOW")},
-            headers={"Authorization": "Bearer " + self._token["access_token"]},
+            "https://iot.controlmyspa.com/spa-commands/temperature/range",
+            json={
+                "range": ("HIGH" if temp_range else "LOW"),
+                "spaId": self._info["_id"],
+                "via": "MOBILE",
+            },
+            headers={"Authorization": "Bearer " + self._token},
             timeout=10,
         )
-        response.raise_for_status()
+        if response.status_code != requests.codes.ok:
+            logging.error("error from controlmyspa API: %s", response.text)
+            response.raise_for_status()
         # update the local info
         self._get_info()
 
@@ -199,19 +203,21 @@ class ControlMySpa:
         Set heater mode READY or REST
         :param heater_mode: True for READY, False for REST
         """
-        if self.heater_mode != heater_mode:
-            # toggle the heater mode if current state and the parameter heater_mode differ
-            response = requests.post(
-                "https://iot.controlmyspa.com/mobile/control/"
-                + self._info["_id"]
-                + "/toggleHeaterMode",
-                json={"originatorId": ""},
-                headers={"Authorization": "Bearer " + self._token["access_token"]},
-                timeout=10,
-            )
+        response = requests.post(
+            "https://iot.controlmyspa.com/spa-commands/temperature/heater-mode",
+            json={
+                "mode": ("READY" if heater_mode else "REST"),
+                "spaId": self._info["_id"],
+                "via": "MOBILE",
+            },
+            headers={"Authorization": "Bearer " + self._token},
+            timeout=10,
+        )
+        if response.status_code != requests.codes.ok:
+            logging.error("error from controlmyspa API: %s", response.text)
             response.raise_for_status()
-            # update the local info
-            self._get_info()
+        # update the local info
+        self._get_info()
 
     @property
     def panel_lock(self):
@@ -229,14 +235,18 @@ class ControlMySpa:
         :param lock: True for locked, False for unlocked
         """
         response = requests.post(
-            "https://iot.controlmyspa.com/mobile/control/"
-            + self._info["_id"]
-            + "/setPanel",
-            json={"desiredState": ("LOCK_PANEL" if lock else "UNLOCK_PANEL")},
-            headers={"Authorization": "Bearer " + self._token["access_token"]},
+            "https://iot.controlmyspa.com/spa-commands/panel/state",
+            json={
+                "state": ("LOCK_PANEL" if lock else "UNLOCK_PANEL"),
+                "spaId": self._info["_id"],
+                "via": "MOBILE",
+            },
+            headers={"Authorization": "Bearer " + self._token},
             timeout=10,
         )
-        response.raise_for_status()
+        if response.status_code != requests.codes.ok:
+            logging.error("error from controlmyspa API: %s", response.text)
+            response.raise_for_status()
         # update the local info
         self._get_info()
 
@@ -260,18 +270,20 @@ class ControlMySpa:
         :param state: False to furn off, True to turn on
         """
         response = requests.post(
-            "https://iot.controlmyspa.com/mobile/control/"
-            + self._info["_id"]
-            + "/setJetState",
+            "https://iot.controlmyspa.com/spa-command/component-state",
             json={
-                "desiredState": ("HIGH" if state else "OFF"),
+                "state": ("HIGH" if state else "OFF"),
                 "deviceNumber": jet_number,
-                "originatorId": "optional-Jet",
+                "componentType": "jet",
+                "spaId": self._info["_id"],
+                "via": "MOBILE",
             },
-            headers={"Authorization": "Bearer " + self._token["access_token"]},
+            headers={"Authorization": "Bearer " + self._token},
             timeout=10,
         )
-        response.raise_for_status()
+        if response.status_code != requests.codes.ok:
+            logging.error("error from controlmyspa API: %s", response.text)
+            response.raise_for_status()
         # update the local info
         self._get_info()
 
@@ -334,23 +346,25 @@ class ControlMySpa:
 
     def set_blower(self, blower_number=0, state=False):
         """
-        Enable/disable jet
-        :param jet_number: My pool has blowers 0, 1 and 2
+        Enable/disable blower. Untested as I don't have blowers.
+        :param blower_number: blower number starting at 0
         :param state: False to furn off, True to turn on
         """
         response = requests.post(
-            "https://iot.controlmyspa.com/mobile/control/"
-            + self._info["_id"]
-            + "/setBlowerState",
+            "https://iot.controlmyspa.com/spa-command/component-state",
             json={
-                "desiredState": ("HIGH" if state else "OFF"),
+                "state": ("HIGH" if state else "OFF"),
                 "deviceNumber": blower_number,
-                "originatorId": "optional-Blower",
+                "componentType": "blower",
+                "spaId": self._info["_id"],
+                "via": "MOBILE",
             },
-            headers={"Authorization": "Bearer " + self._token["access_token"]},
+            headers={"Authorization": "Bearer " + self._token},
             timeout=10,
         )
-        response.raise_for_status()
+        if response.status_code != requests.codes.ok:
+            logging.error("error from controlmyspa API: %s", response.text)
+            response.raise_for_status()
         # update the local info
         self._get_info()
 
@@ -394,18 +408,20 @@ class ControlMySpa:
         :param state: False to furn off, True to turn on
         """
         response = requests.post(
-            "https://iot.controlmyspa.com/mobile/control/"
-            + self._info["_id"]
-            + "/setLightState",
+            "https://iot.controlmyspa.com/spa-command/component-state",
             json={
-                "desiredState": ("HIGH" if state else "OFF"),
+                "state": ("HIGH" if state else "OFF"),
                 "deviceNumber": light_number,
-                "originatorId": "optional-Light",
+                "componentType": "light",
+                "spaId": self._info["_id"],
+                "via": "MOBILE",
             },
-            headers={"Authorization": "Bearer " + self._token["access_token"]},
+            headers={"Authorization": "Bearer " + self._token},
             timeout=10,
         )
-        response.raise_for_status()
+        if response.status_code != requests.codes.ok:
+            logging.error("error from controlmyspa API: %s", response.text)
+            response.raise_for_status()
         # update the local info
         self._get_info()
 
@@ -440,24 +456,4 @@ class ControlMySpa:
         """
         Get the spa online status
         """
-        return self._info["online"]
-
-    def set_chromazon3(self, state=False):
-        """
-        Enable/disable Chromeazon3 lights
-        https://www.balboawatergroup.com/Chromazon3
-        :param state: False to turn off, True to turn on
-        """
-        response = requests.post(
-            "https://iot.controlmyspa.com/mobile/control/"
-            + self._info["_id"]
-            + "/tzl/setPower",
-            json={
-                "desiredState": ("ON" if state else "OFF"),
-            },
-            headers={"Authorization": "Bearer " + self._token["access_token"]},
-            timeout=10,
-        )
-        response.raise_for_status()
-        # update the local info
-        self._get_info()
+        return self._info["currentState"]["online"]

@@ -5,13 +5,6 @@ from controlmyspa import ControlMySpa
 import responses
 
 
-def suite():
-    """Define all the tests of the module."""
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(ControlMySpaTestCase))
-    return suite
-
-
 class ControlMySpaTestCase(unittest.TestCase):
     exampleusername = "example@example.com"
     examplepassword = "password123"
@@ -22,384 +15,495 @@ class ControlMySpaTestCase(unittest.TestCase):
         self.idm = {
             "_links": {
                 "refreshEndpoint": {
-                    "href": "https://idmqa.controlmyspa.com/oxauth/restv1/token"
+                    "href": "https://iamqacontrolmyspa.b2clogin.com/iamqacontrolmyspa.onmicrosoft.com/oauth2/v2.0/token?p=B2C_1_CMS_USER_PWD"
                 },
-                "tokenEndpoint": {
-                    "href": "https://idmqa.controlmyspa.com/oxauth/restv1/token"
-                },
-                "whoami": {"href": "https://iot.controlmyspa.com/mobile/auth/whoami"},
+                "tokenEndpoint": {"href": "https://iot.controlmyspa.com/auth/login"},
+                "whoami": {},
             },
-            "mobileClientId": "@!1234.5678.9ABC.DEF0!1234!5678.9ABC!DEF0!1234.5678",
-            "mobileClientSecret": "mobile",
+            "mobileClientId": "abcd1234",
+            "mobileClientSecret": "abcd1234",
         }
+
         self.responses.add(
             responses.GET,
             "https://iot.controlmyspa.com/idm/tokenEndpoint",
             status=200,
             json=self.idm,
         )
-        self.token = {
-            "access_token": "12345678-9abc-def0-1234-56789abcdef0",
-            "expires_in": 14399,
-            "id_token": "ewogICJraWQiOiAiMTIzNDU2NzgtOWFiYy1kZWYwLTEyMzQtNTY3ODlhYmNkZWYwIiwKICAidHlwIjogIkpXVCIsCiAgImFsZyI6ICJSUzI1NiIKfQ.ewogICJpc3MiOiAiaHR0cHM6Ly9pZG1xYS5jb250cm9sbXlzcGEuY29tIiwKICAiYXVkIjogIkAhMTIzNC41Njc4LjlBQkMuREVGMCExMjM0ITU2NzguOUFCQyFERUYwITEyMzQuNTY3OCIsCiAgImV4cCI6IDE2MzE3MjI5MjQsCiAgImlhdCI6IDE2MzE2MzY1MjQsCiAgIm94T3BlbklEQ29ubmVjdFZlcnNpb24iOiAib3BlbmlkY29ubmVjdC0xLjAiLAogICJzdWIiOiAiQCExMjM0LjU2NzguOUFCQy5ERUYwITEyMzQhNTY3OC45QUJDIURFRjAhMTIzNC41Njc4Igp9.yaWUF4vghbDRqS7ceFK55NPbOQvQIO_F-FIZmQkdCO2XQKtRq_X2nNmqYVEf35YlAsB09AD7P-NSPD_NPPwJeD1v0EECWZdI7qGzaegX34eM7aJU0j3LHHKT28n68AZ9NsfOuoQDLUmHUtXLkPb3522iHqqWclfZLqMX_Ug5vWej9IujFsHPLct8_a4OR7Xt07yPriKPC__qjSl_qFVFeJwoC2bNSh8kUja1p7G7e_cqUTEydK7ZVQxkpqG_HLOBjY3IoJBkRal2Rsh8PtgUhE0SJJJlLuYUWAW2DpU6ceFTA1ocGjv1c7ShDoD2zCedgynKIvogkpbdnoBzkECyOA",
-            "refresh_token": "12345678-9abc-def0-1234-56789abcdef0",
-            "scope": "openid user_name",
-            "token_type": "bearer",
+        self.iam = {
+            "data": {
+                "accessToken": "12345678-9abc-def0-1234-56789abcdef0",
+                "refreshToken": "12345678-9abc-def0-1234-56789abcdef0",
+            },
+            "message": "Log in successful.",
+            "statusCode": 200,
         }
+
         self.responses.add(
             responses.POST,
-            "https://idmqa.controlmyspa.com/oxauth/restv1/token",
+            "https://iot.controlmyspa.com/auth/login",
             status=200,
-            json=self.token,
+            json=self.iam,
             match=[
                 responses.matchers.urlencoded_params_matcher(
                     {
                         "grant_type": "password",
                         "password": self.examplepassword,
                         "scope": "openid user_name",
-                        "username": self.exampleusername,
+                        "email": self.exampleusername,
                     }
                 )
             ],
         )
-        self.user = {
-            "_id": "0123456789abcdef01234567",
-            "_links": {
-                "logo": {
-                    "href": "https://iot.controlmyspa.com/mobile/attachments/0123456789abcdef01234567"
-                },
-                "self": {
-                    "href": "https://iot.controlmyspa.com/mobile/users/0123456789abcdef01234567"
-                },
-                "spa": {
-                    "href": "https://iot.controlmyspa.com/mobile/spas/0123456789abcdef01234567{?projection}",
-                    "templated": True,
-                },
-                "user": {
-                    "href": "https://iot.controlmyspa.com/mobile/users/0123456789abcdef01234567"
-                },
-            },
-            "active": True,
-            "address": {
-                "address1": "Streetaddress 123",
-                "city": "City ",
-                "country": "Country",
-                "zip": "12345",
-            },
-            "dealerId": "0123456789abcdef01234567",
-            "dealerName": "MySpaDealer",
-            "deviceToken": "0123456789abcdef01234567",
-            "deviceType": "IOS",
-            "email": self.exampleusername,
-            "firstName": "Firstname",
-            "fullName": "Firstname Lastname",
-            "lastName": "Lastname",
-            "oemId": "0123456789abcdef01234567",
-            "oemName": "The Spa Producing Company Ltd",
-            "password": self.examplepassword,
-            "phone": "00123456789",
-            "roles": ["OWNER"],
-            "spaId": "0123456789abcdef01234567",
-            "username": self.exampleusername,
-        }
-        self.responses.add(
-            responses.GET,
-            "https://iot.controlmyspa.com/mobile/auth/whoami",
-            status=200,
-            json=self.user,
-        )
-        self.info = {
-            "_id": "0123456789abcdef01234567",
-            "_links": {
-                "AC Current measurements": {
-                    "href": "https://iot.controlmyspa.com/mobile/spas/0123456789abcdef01234567/measurements?measurementType=AC_CURRENT"
-                },
-                "Ambient Temp measurements": {
-                    "href": "https://iot.controlmyspa.com/mobile/spas/0123456789abcdef01234567/measurements?measurementType=AMBIENT_TEMP"
-                },
-                "events": {
-                    "href": "https://iot.controlmyspa.com/mobile/spas/0123456789abcdef01234567/events"
-                },
-                "faultLogs": {
-                    "href": "https://iot.controlmyspa.com/mobile/spas/0123456789abcdef01234567/faultLogs"
-                },
-                "owner": {
-                    "href": "https://iot.controlmyspa.com/mobile/users/0123456789abcdef01234567"
-                },
-                "recipes": {
-                    "href": "https://iot.controlmyspa.com/mobile/spas/0123456789abcdef01234567/recipes"
-                },
-                "self": {
-                    "href": "https://iot.controlmyspa.com/mobile/spas/0123456789abcdef01234567"
-                },
-                "spa": {
-                    "href": "https://iot.controlmyspa.com/mobile/spas/0123456789abcdef01234567{?projection}",
-                    "templated": True,
-                },
-                "spaTemplate": {
-                    "href": "https://iot.controlmyspa.com/mobile/spaTemplates/0123456789abcdef01234567"
-                },
-                "turnOffSpa": {
-                    "href": "https://iot.controlmyspa.com/mobile/spas/0123456789abcdef01234567/recipes/0123456789abcdef01234567/run"
-                },
-                "wifiStats": {
-                    "href": "https://iot.controlmyspa.com/mobile/spas/0123456789abcdef01234567/wifiStats"
-                },
-            },
-            "buildNumber": "1101/101",
-            "currentState": {
-                "abdisplay": False,
-                "allSegsOn": False,
-                "bluetoothStatus": "NOT_PRESENT",
-                "celsius": True,
-                "cleanupCycle": False,
-                "components": [
+        self.list = {
+            "data": {
+                "page": {"number": 0, "size": 20, "totalElements": 1, "totalPages": 0},
+                "spas": [
                     {
-                        "componentType": "HEATER",
-                        "materialType": "HEATER",
-                        "name": "HEATER",
-                        "port": "0",
-                        "registeredTimestamp": "2021-09-14T17:35:17.430+0000",
-                        "value": "OFF",
-                    },
-                    {
-                        "availableValues": ["OFF", "ON", "DISABLED"],
-                        "componentType": "FILTER",
-                        "durationMinutes": 120,
-                        "hour": 20,
-                        "materialType": "FILTER",
-                        "name": "FILTER",
-                        "port": "0",
-                        "registeredTimestamp": "2021-09-14T17:35:17.430+0000",
-                        "value": "ON",
-                    },
-                    {
-                        "availableValues": ["OFF", "ON", "DISABLED"],
-                        "componentType": "FILTER",
-                        "durationMinutes": 120,
-                        "hour": 8,
-                        "materialType": "FILTER",
-                        "name": "FILTER",
-                        "port": "1",
-                        "registeredTimestamp": "2021-09-14T17:35:17.430+0000",
-                        "value": "OFF",
-                    },
-                    {
-                        "availableValues": ["OFF", "ON"],
-                        "componentType": "OZONE",
-                        "materialType": "OZONE",
-                        "name": "OZONE",
-                        "registeredTimestamp": "2021-09-14T17:35:17.430+0000",
-                        "value": "ON",
-                    },
-                    {
-                        "availableValues": ["OFF", "HIGH"],
-                        "componentType": "PUMP",
-                        "materialType": "PUMP",
-                        "name": "PUMP",
-                        "port": "0",
-                        "registeredTimestamp": "2021-09-14T17:35:17.430+0000",
-                        "targetValue": "OFF",
-                        "value": "OFF",
-                    },
-                    {
-                        "availableValues": ["OFF", "HIGH"],
-                        "componentType": "PUMP",
-                        "materialType": "PUMP",
-                        "name": "PUMP",
-                        "port": "1",
-                        "registeredTimestamp": "2021-09-14T17:35:17.430+0000",
-                        "targetValue": "OFF",
-                        "value": "OFF",
-                    },
-                    {
-                        "availableValues": ["OFF", "HIGH"],
-                        "componentType": "PUMP",
-                        "materialType": "PUMP",
-                        "name": "PUMP",
-                        "port": "2",
-                        "registeredTimestamp": "2021-09-14T17:35:17.430+0000",
-                        "targetValue": "OFF",
-                        "value": "OFF",
-                    },
-                    {
-                        "availableValues": ["OFF", "HIGH"],
-                        "componentType": "CIRCULATION_PUMP",
-                        "materialType": "CIRCULATION_PUMP",
-                        "name": "CIRCULATION_PUMP",
-                        "registeredTimestamp": "2021-09-14T17:35:17.430+0000",
-                        "value": "HIGH",
-                    },
-                    {
-                        "availableValues": ["OFF", "HIGH"],
-                        "componentType": "LIGHT",
-                        "materialType": "LIGHT",
-                        "name": "LIGHT",
-                        "port": "0",
-                        "registeredTimestamp": "2021-09-14T17:35:17.446+0000",
-                        "targetValue": "HIGH",
-                        "value": "OFF",
-                    },
-                    {
-                        "_links": {
-                            "component": {
-                                "href": "https://iot.controlmyspa.com/mobile/components/0123456789abcdef01234567"
+                        "_class": "com.tritonsvc.messageprocessor.model.Spa",
+                        "_id": "abcd1234",
+                        "alerts": [
+                            {
+                                "__v": 0,
+                                "_id": "abcd1234",
+                                "celcius": True,
+                                "code": 16,
+                                "controllerType": "NGSC",
+                                "createdAt": "2025-08-06T18:12:07.490Z",
+                                "dealerId": "abcd1234",
+                                "faultLogReceivedTimestamp": "2025-05-06T22:16:00.000Z",
+                                "number": 23,
+                                "oemId": "abcd1234",
+                                "ownerId": "abcd1234",
+                                "sensorATemp": 72,
+                                "sensorBTemp": 78,
+                                "severity": "ERROR",
+                                "spaId": "abcd1234",
+                                "targetTemp": 73,
+                                "timestamp": "2025-05-06T22:16:00.000Z",
+                                "updatedAt": "2025-08-06T18:12:07.490Z",
                             }
+                        ],
+                        "brokerId": None,
+                        "buildNumber": "1130/130",
+                        "c8zCurrentState": {
+                            "c8zHeaterState": "OFF",
+                            "c8zStatus": "C8Z_STATUS_NOT_PRESENT",
                         },
-                        "componentId": "0123456789abcdef01234567",
-                        "componentType": "GATEWAY",
-                        "materialType": "GATEWAY",
-                        "name": "ControlMySpa Gateway",
-                        "registeredTimestamp": "2021-09-14T17:35:17.446+0000",
-                        "serialNumber": "12345***1234567890",
-                    },
-                    {
-                        "componentType": "CONTROLLER",
-                        "materialType": "CONTROLLER",
-                        "name": "CONTROLLER",
-                        "registeredTimestamp": "2021-09-14T17:35:17.446+0000",
-                    },
+                        "currentState": {
+                            "ABDisplay": False,
+                            "accessLocked": False,
+                            "alertState": "ERROR",
+                            "allSegsOn": False,
+                            "ambientTemp": 0,
+                            "blowout": False,
+                            "bluetoothStatus": "NOT_PRESENT",
+                            "celsius": True,
+                            "changeUV": False,
+                            "cleanupCycle": False,
+                            "components": [
+                                {
+                                    "alertState": None,
+                                    "availableValues": [],
+                                    "componentId": None,
+                                    "componentType": "GATEWAY",
+                                    "durationMinutes": None,
+                                    "hour": None,
+                                    "materialType": None,
+                                    "minute": None,
+                                    "name": "GATEWAY",
+                                    "port": None,
+                                    "registeredTimestamp": "2025-08-23T13:19:58.550Z",
+                                    "serialNumber": "abcd1234",
+                                    "targetValue": None,
+                                    "value": None,
+                                },
+                                {
+                                    "alertState": None,
+                                    "availableValues": [],
+                                    "componentId": None,
+                                    "componentType": "CONTROLLER",
+                                    "durationMinutes": None,
+                                    "hour": None,
+                                    "materialType": None,
+                                    "minute": None,
+                                    "name": "CONTROLLER",
+                                    "port": None,
+                                    "registeredTimestamp": "2025-08-23T13:19:58.550Z",
+                                    "serialNumber": "abcd1234",
+                                    "targetValue": None,
+                                    "value": None,
+                                },
+                                {
+                                    "alertState": None,
+                                    "availableValues": ["OFF", "ON", "DISABLED"],
+                                    "componentId": None,
+                                    "componentType": "FILTER",
+                                    "durationMinutes": 120,
+                                    "hour": 0,
+                                    "materialType": None,
+                                    "minute": 0,
+                                    "name": "FILTER",
+                                    "port": "0",
+                                    "registeredTimestamp": "2025-08-23T13:19:58.551Z",
+                                    "serialNumber": "abcd1234",
+                                    "targetValue": None,
+                                    "value": "OFF",
+                                },
+                                {
+                                    "alertState": None,
+                                    "availableValues": ["OFF", "ON", "DISABLED"],
+                                    "componentId": None,
+                                    "componentType": "FILTER",
+                                    "durationMinutes": 120,
+                                    "hour": 8,
+                                    "materialType": None,
+                                    "minute": 0,
+                                    "name": "FILTER",
+                                    "port": "1",
+                                    "registeredTimestamp": "2025-08-23T13:19:58.551Z",
+                                    "serialNumber": "abcd1234",
+                                    "targetValue": None,
+                                    "value": "DISABLED",
+                                },
+                                {
+                                    "alertState": None,
+                                    "availableValues": ["OFF", "ON"],
+                                    "componentId": None,
+                                    "componentType": "OZONE",
+                                    "durationMinutes": None,
+                                    "hour": None,
+                                    "materialType": None,
+                                    "minute": None,
+                                    "name": "OZONE",
+                                    "port": None,
+                                    "registeredTimestamp": "2025-08-23T13:19:58.551Z",
+                                    "serialNumber": "abcd1234",
+                                    "targetValue": None,
+                                    "value": "ON",
+                                },
+                                {
+                                    "alertState": None,
+                                    "availableValues": ["OFF", "HIGH"],
+                                    "componentId": None,
+                                    "componentType": "PUMP",
+                                    "durationMinutes": None,
+                                    "hour": None,
+                                    "materialType": None,
+                                    "minute": None,
+                                    "name": "PUMP",
+                                    "port": "0",
+                                    "registeredTimestamp": "2025-08-23T13:19:58.551Z",
+                                    "serialNumber": "abcd1234",
+                                    "targetValue": None,
+                                    "value": "OFF",
+                                },
+                                {
+                                    "alertState": None,
+                                    "availableValues": ["OFF", "HIGH"],
+                                    "componentId": None,
+                                    "componentType": "PUMP",
+                                    "durationMinutes": None,
+                                    "hour": None,
+                                    "materialType": None,
+                                    "minute": None,
+                                    "name": "PUMP",
+                                    "port": "1",
+                                    "registeredTimestamp": "2025-08-23T13:19:58.551Z",
+                                    "serialNumber": "abcd1234",
+                                    "targetValue": None,
+                                    "value": "OFF",
+                                },
+                                {
+                                    "alertState": None,
+                                    "availableValues": ["OFF", "HIGH"],
+                                    "componentId": None,
+                                    "componentType": "PUMP",
+                                    "durationMinutes": None,
+                                    "hour": None,
+                                    "materialType": None,
+                                    "minute": None,
+                                    "name": "PUMP",
+                                    "port": "2",
+                                    "registeredTimestamp": "2025-08-23T13:19:58.551Z",
+                                    "serialNumber": "abcd1234",
+                                    "targetValue": None,
+                                    "value": "OFF",
+                                },
+                                {
+                                    "alertState": None,
+                                    "availableValues": ["OFF", "HIGH"],
+                                    "componentId": None,
+                                    "componentType": "CIRCULATION_PUMP",
+                                    "durationMinutes": None,
+                                    "hour": None,
+                                    "materialType": None,
+                                    "minute": None,
+                                    "name": "CIRCULATION_PUMP",
+                                    "port": None,
+                                    "registeredTimestamp": "2025-08-23T13:19:58.551Z",
+                                    "serialNumber": "abcd1234",
+                                    "targetValue": None,
+                                    "value": "HIGH",
+                                },
+                                {
+                                    "alertState": None,
+                                    "availableValues": ["OFF", "HIGH"],
+                                    "componentId": None,
+                                    "componentType": "LIGHT",
+                                    "durationMinutes": None,
+                                    "hour": None,
+                                    "materialType": None,
+                                    "minute": None,
+                                    "name": "LIGHT",
+                                    "port": "0",
+                                    "registeredTimestamp": "2025-08-23T13:19:58.551Z",
+                                    "serialNumber": "abcd1234",
+                                    "targetValue": None,
+                                    "value": "OFF",
+                                },
+                            ],
+                            "controllerType": "NGSC",
+                            "currentTemp": "87.80",
+                            "day": 0,
+                            "demoMode": False,
+                            "desiredTemp": "98.60",
+                            "ecoMode": False,
+                            "elapsedTimeDisplay": False,
+                            "engineeringMode": False,
+                            "errorCode": 0,
+                            "ethernetPluggedIn": True,
+                            "flowSwitchClosed": False,
+                            "futureSentTimestamp": 0,
+                            "heatExternallyDisabled": False,
+                            "heaterCooling": False,
+                            "heaterMode": "READY",
+                            "hiLimitTemp": 0,
+                            "hour": 16,
+                            "invert": False,
+                            "latchingMessage": False,
+                            "lightCycle": False,
+                            "maintenanceLocked": False,
+                            "messageSeverity": 0,
+                            "military": True,
+                            "minute": 19,
+                            "month": 0,
+                            "offlineAlert": False,
+                            "online": True,
+                            "overrangeEnabled": False,
+                            "panelLock": False,
+                            "panelMode": "PANEL_MODE_NGSC",
+                            "primaryTZLStatus": "TZL_NOT_PRESENT",
+                            "primingMode": False,
+                            "registrationLockout": False,
+                            "reminderCode": None,
+                            "reminderDaysClearRay": 0,
+                            "reminderDaysFilter1": 0,
+                            "reminderDaysFilter2": 0,
+                            "reminderDaysWater": 0,
+                            "repeat": False,
+                            "rs485AcquiredAddress": 18,
+                            "rs485ConnectionActive": True,
+                            "runMode": "Ready",
+                            "secondaryFiltrationMode": "AWAY",
+                            "secondaryTZLStatus": "TZL_NOT_PRESENT",
+                            "sentTimestamp": 0,
+                            "settingsLock": False,
+                            "setupParams": {
+                                "drainModeEnabled": False,
+                                "gfciEnabled": False,
+                                "highRangeHigh": 104,
+                                "highRangeLow": 80,
+                                "lastUpdateTimestamp": "2025-08-23T13:20:01.792Z",
+                                "lowRangeHigh": 99,
+                                "lowRangeLow": 50,
+                            },
+                            "shouldShowAlert": False,
+                            "soakMode": False,
+                            "soundAlarm": False,
+                            "spaOverheatDisabled": False,
+                            "spaRunState": None,
+                            "specialTimeouts": False,
+                            "staleTimestamp": "2025-08-23T13:22:58.546Z",
+                            "stirring": False,
+                            "swimSpaMode": "SWIM_MODE_OTHER",
+                            "swimSpaModeChanging": False,
+                            "systemInfo": {
+                                "controllerSoftwareVersion": "M100_226 " "V43.0",
+                                "currentSetup": 7,
+                                "dipSwitches": [
+                                    {"on": False, "slotNumber": 1},
+                                    {"on": False, "slotNumber": 2},
+                                    {"on": False, "slotNumber": 3},
+                                    {"on": True, "slotNumber": 4},
+                                    {"on": False, "slotNumber": 5},
+                                    {"on": False, "slotNumber": 6},
+                                    {"on": False, "slotNumber": 7},
+                                    {"on": False, "slotNumber": 8},
+                                    {"on": False, "slotNumber": 9},
+                                    {"on": False, "slotNumber": 10},
+                                ],
+                                "heaterPower": 3,
+                                "heaterType": 0,
+                                "lastUpdateTimestamp": "2025-08-23T13:20:07.307Z",
+                                "mfrSSID": 100,
+                                "minorVersion": 0,
+                                "modelSSID": 226,
+                                "packMajorVersion": 0,
+                                "packMinorVersion": 0,
+                                "serialNumber": 0,
+                                "versionSSID": 43,
+                            },
+                            "targetDesiredTemp": "98.6",
+                            "tempLock": False,
+                            "tempRange": "LOW",
+                            "temperatureReached": False,
+                            "testMode": False,
+                            "timeNotSet": False,
+                            "tvLiftState": 0,
+                            "uiCode": 0,
+                            "uiSubCode": 0,
+                            "updateIntervalSeconds": 0,
+                            "uplinkTimestamp": "2025-08-23T13:19:58.546Z",
+                            "waterLevel1": False,
+                            "waterLevel2": False,
+                            "wifiConnectionHealth": None,
+                            "wifiUpdateIntervalSeconds": 0,
+                            "year": 0,
+                        },
+                        "dealerId": {
+                            "_class": "com.bwg.iot.model.Dealer",
+                            "_id": "abcd1234",
+                            "active": True,
+                            "address": {
+                                "_id": "abcd1234",
+                                "address1": "Tehdaskatu 7",
+                                "city": "SALO",
+                                "country": "Finland",
+                                "links": [],
+                                "state": "Varsinais-Suomi",
+                                "zip": "24100",
+                            },
+                            "cmsCode": "abcd1234",
+                            "code": "abcd1234",
+                            "email": "huolto@novitek.fi",
+                            "links": [],
+                            "logo": {
+                                "_id": "5bc449b428381aee3670d907",
+                                "fileId": "5bc449b428381aee3670d908",
+                                "links": [],
+                                "name": "novitek-logo-musta.png",
+                            },
+                            "logoUrl": "https://bwgcmsstorage.blob.core.windows.net/attachments/6fbcf27b-4435-4030-b48f-db2d112c13da.png",
+                            "modifiedDate": "2024-06-05T19:07:14.637Z",
+                            "name": "Novitek",
+                            "oemId": "5a04e66f283885d17ed233f2",
+                            "oemName": "Oy Nordic",
+                            "phone": "+3582737270",
+                            "updatedAt": "2024-06-05T19:07:14.637Z",
+                        },
+                        "dealerName": "Novitek",
+                        "ipAddress": "",
+                        "isDefault": True,
+                        "lastAlertDate": "2025-04-13T19:19:21.840Z",
+                        "manufacturedDate": "2021-09-07T14:27:06.851Z",
+                        "model": "Default Spa",
+                        "oemId": {
+                            "_class": "com.bwg.iot.model.Oem",
+                            "_id": "5a04e66f283885d17ed233f2",
+                            "active": True,
+                            "address": {
+                                "_id": "5c90a2d02838c70773a4ef7d",
+                                "address1": "Tehdaskatu 7",
+                                "city": "Salo  ",
+                                "country": "Finland",
+                                "links": [],
+                                "state": "--",
+                                "zip": "FIN-24100",
+                            },
+                            "adminEmail": "jp.fager@novitek.fi",
+                            "adminId": "5bc42e9028381aee3670d876",
+                            "adminName": "Jukka-Pekka Fager",
+                            "code": "PDS",
+                            "createdDate": "2017-11-09T23:36:15.587Z",
+                            "customerNumber": "12345678",
+                            "email": "jp.fager@novitek.fi",
+                            "links": [],
+                            "logo": {
+                                "_id": "5bc4327528381aee3670d87c",
+                                "fileId": "5bc4327528381aee3670d87d",
+                                "links": [],
+                                "name": "novitek-logo-musta.png",
+                            },
+                            "logoUrl": "https://bwgcmsstorage.blob.core.windows.net/attachments/8a3b0c6d-1084-4ac7-bda2-cd7191ff82db.png",
+                            "modifiedDate": "2024-06-05T19:07:00.995Z",
+                            "name": "Oy Nordic Spa Ltd",
+                            "phone": "+358-2-737270",
+                            "updatedAt": "2024-06-05T19:07:00.996Z",
+                        },
+                        "oemName": "Oy Nordic Spa Ltd",
+                        "ownerEmail": "example@example.com",
+                        "ownerId": {
+                            "_class": "com.bwg.iot.model.User",
+                            "_id": "abcd1234",
+                            "active": True,
+                            "address": {
+                                "_id": "abcd1234",
+                                "address1": "example@example.com",
+                                "address2": "",
+                                "city": "Turku",
+                                "country": "Finland",
+                                "state": "Turku",
+                                "zip": "",
+                            },
+                            "createdDate": "2023-01-23T15:48:16.278Z",
+                            "dealerId": "abcd1234",
+                            "dealerName": "Novitek",
+                            "deviceToken": "abcd1234",
+                            "deviceType": "IOS",
+                            "email": "example@example.com",
+                            "firstName": "first",
+                            "fullName": "first last",
+                            "lastLogin": "2025-08-23T13:20:17.970Z",
+                            "lastName": "last",
+                            "links": [],
+                            "notes": "",
+                            "oemId": "abcd1234",
+                            "oemName": "Oy Nordic Spa Ltd",
+                            "phone": "00123456789",
+                            "roles": ["OWNER"],
+                            "spaId": "abcd1234",
+                            "timeZone": "Europe/Helsinki",
+                            "updatedAt": "2025-08-23T13:20:17.970Z",
+                        },
+                        "ownerName": "first last",
+                        "p2pAPPassword": "",
+                        "p2pAPSSID": "abcd1234",
+                        "productName": "Default Spa",
+                        "regKey": "abcd1234",
+                        "registrationDate": "2025-05-05T18:16:33.424Z",
+                        "salesDate": "2021-09-07T14:27:18.117Z",
+                        "serialNumber": "abcd1234",
+                        "updatedAt": "2025-08-23T13:20:20.344Z",
+                    }
                 ],
-                "controllerType": "NGSC",
-                "currentTemp": "100.4",
-                "demoMode": False,
-                "desiredTemp": "99.5",
-                "ecoMode": False,
-                "elapsedTimeDisplay": False,
-                "errorCode": 0,
-                "ethernetPluggedIn": True,
-                "heatExternallyDisabled": False,
-                "heaterCooling": False,
-                "heaterMode": "READY",
-                "hour": 20,
-                "invert": False,
-                "latchingMessage": False,
-                "lightCycle": False,
-                "messageSeverity": 0,
-                "military": True,
-                "minute": 35,
-                "offlineAlert": False,
-                "online": True,
-                "overrangeEnabled": False,
-                "panelLock": False,
-                "panelMode": "PANEL_MODE_NGSC",
-                "primaryTZLStatus": "TZL_NOT_PRESENT",
-                "primingMode": False,
-                "repeat": False,
-                "rs485AcquiredAddress": 16,
-                "rs485ConnectionActive": True,
-                "runMode": "Ready",
-                "secondaryFiltrationMode": "AWAY",
-                "secondaryTZLStatus": "TZL_NOT_PRESENT",
-                "settingsLock": False,
-                "setupParams": {
-                    "drainModeEnabled": False,
-                    "gfciEnabled": False,
-                    "highRangeHigh": 104,
-                    "highRangeLow": 80,
-                    "lastUpdateTimestamp": "1970-01-01T00:00:03.436+0000",
-                    "lowRangeHigh": 99,
-                    "lowRangeLow": 50,
-                },
-                "shouldShowAlert": False,
-                "soakMode": False,
-                "soundAlarm": False,
-                "spaOverheatDisabled": False,
-                "specialTimeouts": False,
-                "staleTimestamp": "2021-09-14T17:37:02.430+0000",
-                "stirring": False,
-                "swimSpaMode": "SWIM_MODE_OTHER",
-                "swimSpaModeChanging": False,
-                "systemInfo": {
-                    "controllerSoftwareVersion": "M100_226 V43.0",
-                    "currentSetup": 7,
-                    "dipSwitches": [
-                        {"on": False, "slotNumber": 1},
-                        {"on": False, "slotNumber": 2},
-                        {"on": False, "slotNumber": 3},
-                        {"on": True, "slotNumber": 4},
-                        {"on": False, "slotNumber": 5},
-                        {"on": False, "slotNumber": 6},
-                        {"on": False, "slotNumber": 7},
-                        {"on": False, "slotNumber": 8},
-                        {"on": False, "slotNumber": 9},
-                        {"on": False, "slotNumber": 10},
-                    ],
-                    "heaterPower": 3,
-                    "lastUpdateTimestamp": "1970-01-01T00:00:06.449+0000",
-                    "mfrSSID": 100,
-                    "modelSSID": 226,
-                    "swSignature": -148899849,
-                    "versionSSID": 43,
-                },
-                "targetDesiredTemp": "96.8",
-                "tempLock": False,
-                "tempRange": "HIGH",
-                "testMode": False,
-                "timeNotSet": False,
-                "tvLiftState": 0,
-                "uiCode": 0,
-                "uiSubCode": 0,
-                "updateIntervalSeconds": 0,
-                "uplinkTimestamp": "2021-09-14T17:35:17.430+0000",
-                "wifiUpdateIntervalSeconds": 0,
             },
-            "dealerId": "0123456789abcdef01234567",
-            "dealerName": "MySpaDealer",
-            "demo": False,
-            "manufacturedDate": "2021-09-07T14:27:06.851+0000",
-            "model": "Default Spa",
-            "oemId": "0123456789abcdef01234567",
-            "oemName": "The Spa Producing Company Ltd",
-            "online": True,
-            "owner": {
-                "_id": "0123456789abcdef01234567",
-                "_links": {
-                    "address": {
-                        "href": "https://iot.controlmyspa.com/mobile/addresses/0123456789abcdef01234567"
-                    },
-                    "self": {
-                        "href": "https://iot.controlmyspa.com/mobile/users/0123456789abcdef01234567"
-                    },
-                },
-                "active": True,
-                "address": {
-                    "address1": "Streetaddress 123",
-                    "city": "City ",
-                    "country": "Country",
-                    "zip": "12345",
-                },
-                "dealerId": "0123456789abcdef01234567",
-                "dealerName": "MySpaDealer",
-                "deviceToken": "0123456789abcdef01234567",
-                "deviceType": "IOS",
-                "email": self.exampleusername,
-                "firstName": "Firstname",
-                "fullName": "Firstname Lastname",
-                "lastName": "Lastname",
-                "oemId": "0123456789abcdef01234567",
-                "oemName": "The Spa Producing Company Ltd",
-                "password": self.examplepassword,
-                "phone": "00123456789",
-                "roles": ["OWNER"],
-                "spaId": "0123456789abcdef01234567",
-                "username": self.exampleusername,
-            },
-            "p2pAPSSID": "CMS_SPA_12345***1234567890",
-            "productName": "Default Spa",
-            "registrationDate": "2021-09-06T13:13:29.705+0000",
-            "salesDate": "2021-09-07T14:27:18.117+0000",
-            "serialNumber": "12345***1234567890",
-            "sold": "true",
-            "templateId": "0123456789abcdef01234567",
-            "transactionCode": "A1B2C3D4",
+            "message": "Spas retrieved successfully.",
+            "statusCode": 200,
         }
+
         self.responses.add(
             responses.GET,
-            "https://iot.controlmyspa.com/mobile/spas/search/findByUsername?username="
-            + self.exampleusername,
+            "https://iot.controlmyspa.com/spas",
+            match=[
+                responses.matchers.query_param_matcher(
+                    {
+                        "username": self.exampleusername,
+                    }
+                )
+            ],
             status=200,
-            json=self.info,
+            json=self.list,
         )
 
         self.addCleanup(self.responses.stop)
@@ -410,7 +514,7 @@ class ControlMySpaTestCase(unittest.TestCase):
         self.assertEqual(cms._email, self.exampleusername)
         self.assertEqual(cms._password, self.examplepassword)
         # there should have been 4 API calls
-        self.assertAlmostEqual(len(self.responses.calls), 4, delta=1)
+        self.assertAlmostEqual(len(self.responses.calls), 3, delta=1)
         # test the basic auth of login
         self.assertLessEqual(
             {
@@ -423,47 +527,45 @@ class ControlMySpaTestCase(unittest.TestCase):
                     ).encode("ascii")
                 ).decode("ascii")
             }.items(),
+            self.responses.calls[1].request.headers.items(),
+        )
+        # test token authentication of spas
+        self.assertLessEqual(
+            {"Authorization": "Bearer 12345678-9abc-def0-1234-56789abcdef0"}.items(),
             self.responses.calls[2].request.headers.items(),
         )
-        # test token authentication of whoami
-        self.assertLessEqual(
-            {"Authorization": "Bearer 12345678-9abc-def0-1234-56789abcdef0"}.items(),
-            self.responses.calls[3].request.headers.items(),
-        )
-        # test token authentication of search
-        self.assertLessEqual(
-            {"Authorization": "Bearer 12345678-9abc-def0-1234-56789abcdef0"}.items(),
-            self.responses.calls[4].request.headers.items(),
-        )
         self.assertDictEqual(cms._idm, self.idm)
-        self.assertDictEqual(cms._token, self.token)
-        self.assertDictEqual(cms._user, self.user)
-        self.assertDictEqual(cms._info, self.info)
+        self.assertDictEqual(cms._iam, self.iam)
+        self.assertDictEqual(cms._list, self.list)
 
     def test_current_temp_get(self):
         cms = ControlMySpa(self.exampleusername, self.examplepassword)
-        self.assertEqual(cms.current_temp, 38)
+        self.assertEqual(cms.current_temp, 31)
 
     def test_desired_temp_get(self):
         cms = ControlMySpa(self.exampleusername, self.examplepassword)
-        self.assertEqual(cms.desired_temp, 37.5)
+        self.assertEqual(cms.desired_temp, 37)
 
     def test_current_temp_get_fahrenheit(self):
         cms = ControlMySpa(self.exampleusername, self.examplepassword)
         cms._info["currentState"]["celsius"] = False
-        self.assertEqual(cms.current_temp, 100.4)
+        self.assertEqual(cms.current_temp, 87.80)
 
     def test_desired_temp_get_fahrenheit(self):
         cms = ControlMySpa(self.exampleusername, self.examplepassword)
         cms._info["currentState"]["celsius"] = False
-        self.assertEqual(cms.desired_temp, 99.5)
+        self.assertEqual(cms.desired_temp, 98.60)
 
     def test_desired_temp_set(self):
         cms = ControlMySpa(self.exampleusername, self.examplepassword)
         self.responses.add(
             responses.POST,
-            "https://iot.controlmyspa.com/mobile/control/0123456789abcdef01234567/setDesiredTemp",
-            match=[responses.matchers.json_params_matcher({"desiredTemp": 96.8})],
+            "https://iot.controlmyspa.com/spa-commands/temperature/value",
+            match=[
+                responses.matchers.json_params_matcher(
+                    {"value": 96.8, "spaId": "abcd1234", "via": "MOBILE"}
+                )
+            ],
             json={},
         )
         cms.desired_temp = 36
@@ -473,32 +575,44 @@ class ControlMySpaTestCase(unittest.TestCase):
         cms._info["currentState"]["celsius"] = False
         self.responses.add(
             responses.POST,
-            "https://iot.controlmyspa.com/mobile/control/0123456789abcdef01234567/setDesiredTemp",
-            match=[responses.matchers.json_params_matcher({"desiredTemp": 96})],
+            "https://iot.controlmyspa.com/spa-commands/temperature/value",
+            match=[
+                responses.matchers.json_params_matcher(
+                    {"value": 96, "spaId": "abcd1234", "via": "MOBILE"}
+                )
+            ],
             json={},
         )
         cms.desired_temp = 96
 
     def test_temp_range(self):
         cms = ControlMySpa(self.exampleusername, self.examplepassword)
-        # Default data in test set is "HIGH"
-        self.assertEqual(cms.temp_range, True)
-        cms._info["currentState"]["tempRange"] = "LOW"
+        # Default data in test set is "LOW"
         self.assertEqual(cms.temp_range, False)
+        cms._info["currentState"]["tempRange"] = "HIGH"
+        self.assertEqual(cms.temp_range, True)
 
     def test_temp_range_set(self):
         cms = ControlMySpa(self.exampleusername, self.examplepassword)
         self.responses.add(
             responses.POST,
-            "https://iot.controlmyspa.com/mobile/control/0123456789abcdef01234567/setTempRange",
-            match=[responses.matchers.json_params_matcher({"desiredState": "HIGH"})],
+            "https://iot.controlmyspa.com/spa-commands/temperature/range",
+            match=[
+                responses.matchers.json_params_matcher(
+                    {"range": "HIGH", "spaId": "abcd1234", "via": "MOBILE"}
+                )
+            ],
             json={},
         )
         cms.temp_range = True
         self.responses.add(
             responses.POST,
-            "https://iot.controlmyspa.com/mobile/control/0123456789abcdef01234567/setTempRange",
-            match=[responses.matchers.json_params_matcher({"desiredState": "LOW"})],
+            "https://iot.controlmyspa.com/spa-commands/temperature/range",
+            match=[
+                responses.matchers.json_params_matcher(
+                    {"range": "LOW", "spaId": "abcd1234", "via": "MOBILE"}
+                )
+            ],
             json={},
         )
         cms.temp_range = False
@@ -514,18 +628,22 @@ class ControlMySpaTestCase(unittest.TestCase):
         cms = ControlMySpa(self.exampleusername, self.examplepassword)
         self.responses.add(
             responses.POST,
-            "https://iot.controlmyspa.com/mobile/control/0123456789abcdef01234567/setPanel",
+            "https://iot.controlmyspa.com/spa-commands/panel/state",
             match=[
-                responses.matchers.json_params_matcher({"desiredState": "LOCK_PANEL"})
+                responses.matchers.json_params_matcher(
+                    {"state": "LOCK_PANEL", "spaId": "abcd1234", "via": "MOBILE"}
+                )
             ],
             json={},
         )
         cms.panel_lock = True
         self.responses.add(
             responses.POST,
-            "https://iot.controlmyspa.com/mobile/control/0123456789abcdef01234567/setPanel",
+            "https://iot.controlmyspa.com/spa-commands/panel/state",
             match=[
-                responses.matchers.json_params_matcher({"desiredState": "UNLOCK_PANEL"})
+                responses.matchers.json_params_matcher(
+                    {"state": "UNLOCK_PANEL", "spaId": "abcd1234", "via": "MOBILE"}
+                )
             ],
             json={},
         )
@@ -551,13 +669,15 @@ class ControlMySpaTestCase(unittest.TestCase):
         cms = ControlMySpa(self.exampleusername, self.examplepassword)
         self.responses.add(
             responses.POST,
-            "https://iot.controlmyspa.com/mobile/control/0123456789abcdef01234567/setJetState",
+            "https://iot.controlmyspa.com/spa-command/component-state",
             match=[
                 responses.matchers.json_params_matcher(
                     {
-                        "desiredState": "HIGH",
+                        "state": "HIGH",
                         "deviceNumber": 0,
-                        "originatorId": "optional-Jet",
+                        "componentType": "jet",
+                        "spaId": "abcd1234",
+                        "via": "MOBILE",
                     }
                 )
             ],
@@ -567,13 +687,15 @@ class ControlMySpaTestCase(unittest.TestCase):
         cms.jets = [True]
         self.responses.add(
             responses.POST,
-            "https://iot.controlmyspa.com/mobile/control/0123456789abcdef01234567/setJetState",
+            "https://iot.controlmyspa.com/spa-command/component-state",
             match=[
                 responses.matchers.json_params_matcher(
                     {
-                        "desiredState": "OFF",
+                        "state": "OFF",
                         "deviceNumber": 0,
-                        "originatorId": "optional-Jet",
+                        "componentType": "jet",
+                        "spaId": "abcd1234",
+                        "via": "MOBILE",
                     }
                 )
             ],
@@ -625,13 +747,15 @@ class ControlMySpaTestCase(unittest.TestCase):
         cms = ControlMySpa(self.exampleusername, self.examplepassword)
         self.responses.add(
             responses.POST,
-            "https://iot.controlmyspa.com/mobile/control/0123456789abcdef01234567/setBlowerState",
+            "https://iot.controlmyspa.com/spa-command/component-state",
             match=[
                 responses.matchers.json_params_matcher(
                     {
-                        "desiredState": "HIGH",
+                        "state": "HIGH",
                         "deviceNumber": 0,
-                        "originatorId": "optional-Blower",
+                        "componentType": "blower",
+                        "spaId": "abcd1234",
+                        "via": "MOBILE",
                     }
                 )
             ],
@@ -642,13 +766,15 @@ class ControlMySpaTestCase(unittest.TestCase):
 
         self.responses.add(
             responses.POST,
-            "https://iot.controlmyspa.com/mobile/control/0123456789abcdef01234567/setBlowerState",
+            "https://iot.controlmyspa.com/spa-command/component-state",
             match=[
                 responses.matchers.json_params_matcher(
                     {
-                        "desiredState": "OFF",
+                        "state": "OFF",
                         "deviceNumber": 0,
-                        "originatorId": "optional-Blower",
+                        "componentType": "blower",
+                        "spaId": "abcd1234",
+                        "via": "MOBILE",
                     }
                 )
             ],
@@ -673,13 +799,15 @@ class ControlMySpaTestCase(unittest.TestCase):
         cms = ControlMySpa(self.exampleusername, self.examplepassword)
         self.responses.add(
             responses.POST,
-            "https://iot.controlmyspa.com/mobile/control/0123456789abcdef01234567/setLightState",
+            "https://iot.controlmyspa.com/spa-command/component-state",
             match=[
                 responses.matchers.json_params_matcher(
                     {
-                        "desiredState": "HIGH",
+                        "state": "HIGH",
                         "deviceNumber": 0,
-                        "originatorId": "optional-Light",
+                        "componentType": "light",
+                        "spaId": "abcd1234",
+                        "via": "MOBILE",
                     }
                 )
             ],
@@ -690,13 +818,15 @@ class ControlMySpaTestCase(unittest.TestCase):
 
         self.responses.add(
             responses.POST,
-            "https://iot.controlmyspa.com/mobile/control/0123456789abcdef01234567/setLightState",
+            "https://iot.controlmyspa.com/spa-command/component-state",
             match=[
                 responses.matchers.json_params_matcher(
                     {
-                        "desiredState": "OFF",
+                        "state": "OFF",
                         "deviceNumber": 0,
-                        "originatorId": "optional-Light",
+                        "componentType": "light",
+                        "spaId": "abcd1234",
+                        "via": "MOBILE",
                     }
                 )
             ],
@@ -717,7 +847,7 @@ class ControlMySpaTestCase(unittest.TestCase):
 
     def test_serialnumber(self):
         cms = ControlMySpa(self.exampleusername, self.examplepassword)
-        self.assertEqual(cms.get_serial(), self.info["serialNumber"])
+        self.assertEqual(cms.get_serial(), self.list["data"]["spas"][0]["serialNumber"])
 
     def test_heater_mode(self):
         cms = ControlMySpa(self.exampleusername, self.examplepassword)
@@ -731,31 +861,35 @@ class ControlMySpaTestCase(unittest.TestCase):
         cms = ControlMySpa(self.exampleusername, self.examplepassword)
         self.responses.add(
             responses.POST,
-            "https://iot.controlmyspa.com/mobile/control/0123456789abcdef01234567/toggleHeaterMode",
-            match=[responses.matchers.json_params_matcher({"originatorId": ""})],
+            "https://iot.controlmyspa.com/spa-commands/temperature/heater-mode",
+            match=[
+                responses.matchers.json_params_matcher(
+                    {
+                        "mode": "READY",
+                        "spaId": "abcd1234",
+                        "via": "MOBILE",
+                    }
+                )
+            ],
             json={},
         )
-        # test READY -> READY (no-op)
         cms.heater_mode = True
 
-        # test READY -> REST
-        cms.heater_mode = False
-        cms._info["currentState"]["heaterMode"] = "REST"
-
-        # test REST -> REST (no-op)
-        cms.heater_mode = False
-
-        # test REST -> READY
-        cms.heater_mode = True
-        cms._info["currentState"]["heaterMode"] = "READY"
-
-        #  check that toggle was called exactly 2 times and not for the no-ops
-        self.assertTrue(
-            self.responses.assert_call_count(
-                "https://iot.controlmyspa.com/mobile/control/0123456789abcdef01234567/toggleHeaterMode",
-                2,
-            )
+        self.responses.add(
+            responses.POST,
+            "https://iot.controlmyspa.com/spa-commands/temperature/heater-mode",
+            match=[
+                responses.matchers.json_params_matcher(
+                    {
+                        "mode": "REST",
+                        "spaId": "abcd1234",
+                        "via": "MOBILE",
+                    }
+                )
+            ],
+            json={},
         )
+        cms.heater_mode = False
 
     def test_circulation_pumps(self):
         cms = ControlMySpa(self.exampleusername, self.examplepassword)
