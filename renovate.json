@@ -7,6 +7,16 @@
     {
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
       "automerge": true
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["major"],
+      "automerge": true
+    },
+    {
+      "matchPackageNames": ["certifi"],
+      "matchUpdateTypes": ["major"],
+      "automerge": true
     }
   ]
   
