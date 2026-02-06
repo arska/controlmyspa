@@ -329,7 +329,7 @@ class ControlMySpaTestCase(unittest.TestCase):
                             "swimSpaMode": "SWIM_MODE_OTHER",
                             "swimSpaModeChanging": False,
                             "systemInfo": {
-                                "controllerSoftwareVersion": "M100_226 " "V43.0",
+                                "controllerSoftwareVersion": "M100_226 V43.0",
                                 "currentSetup": 7,
                                 "dipSwitches": [
                                     {"on": False, "slotNumber": 1},

@@ -20,6 +20,7 @@ __pycache__/
 /pytestdebug.log
 /.pytest_cache/
 /.tox/
+/.nox/
 /.coverage
 /htmlcov/
 coverage.xml
