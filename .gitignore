@@ -1,9 +1,11 @@
 # IDEs & editors
 /.idea/
+.DS_Store
 
 # cache
 *.py[cod]
 __pycache__/
+/.ruff_cache/
 
 # virtualenv
 /virtualenv/
