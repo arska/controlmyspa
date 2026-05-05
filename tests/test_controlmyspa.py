@@ -946,7 +946,11 @@ class ControlMySpaTestCase(unittest.TestCase):
         spa_data_no_state = self.list.copy()
         spa_data_no_state["data"] = self.list["data"].copy()
         spa_data_no_state["data"]["spas"] = [
-            {k: v for k, v in self.list["data"]["spas"][0].items() if k != "currentState"}
+            {
+                k: v
+                for k, v in self.list["data"]["spas"][0].items()
+                if k != "currentState"
+            }
         ]
         # Reset and re-add responses with modified data
         self.responses.reset()
