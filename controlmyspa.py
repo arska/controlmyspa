@@ -7,6 +7,11 @@ import logging
 import requests
 
 
+class SpaOfflineError(Exception):
+    """Raised when the spa API response does not contain 'currentState',
+    which typically indicates the spa gateway is offline."""
+
+
 class ControlMySpa:
     """
     Class representing Balboa ControlMySpa whirlpools
@@ -106,6 +111,10 @@ class ControlMySpa:
             response.raise_for_status()
         self._list = response.json()
         self._info = self._list["data"]["spas"][self._spa_offset]
+        if "currentState" not in self._info:
+            raise SpaOfflineError(
+                "Spa data does not contain 'currentState' — the spa gateway may be offline"
+            )
         return self._info
 
     @property
