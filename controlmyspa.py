@@ -125,8 +125,8 @@ class ControlMySpa:
                 )
                 time.sleep(retry_delay)
         raise SpaOfflineError(
-            "Spa data does not contain 'currentState' after %d attempts"
-            " — the spa gateway may be offline" % retries
+            f"Spa data does not contain 'currentState' after {retries} attempts"
+            " — the spa gateway may be offline"
         )
 
     @property
