@@ -3,8 +3,14 @@ Python module to get metrics from and control Balboa ControlMySpa whirlpools
 """
 
 import logging
+import time
 
 import requests
+
+
+class SpaOfflineError(Exception):
+    """Raised when the spa API response does not contain 'currentState',
+    which typically indicates the spa gateway is offline."""
 
 
 class ControlMySpa:
@@ -91,22 +97,37 @@ class ControlMySpa:
         self._token = self._iam["data"]["accessToken"]
         return self._iam
 
-    def _get_info(self):
+    def _get_info(self, retries=3, retry_delay=5):
         """
-        Get all the details for the whirlpool of the logged in user
+        Get all the details for the whirlpool of the logged in user.
+        Retries a few times if currentState is missing (gateway may be temporarily offline).
         """
-        response = requests.get(
-            "https://iot.controlmyspa.com/spas",
-            params={"username": self._email},
-            headers={"Authorization": "Bearer " + self._token},
-            timeout=10,
+        for attempt in range(retries):
+            response = requests.get(
+                "https://iot.controlmyspa.com/spas",
+                params={"username": self._email},
+                headers={"Authorization": "Bearer " + self._token},
+                timeout=10,
+            )
+            if response.status_code != requests.codes.ok:
+                logging.error("error from controlmyspa API: %s", response.text)
+                response.raise_for_status()
+            self._list = response.json()
+            self._info = self._list["data"]["spas"][self._spa_offset]
+            if "currentState" in self._info:
+                return self._info
+            if attempt < retries - 1:
+                logging.warning(
+                    "Spa data missing 'currentState', retrying in %ds (%d/%d)",
+                    retry_delay,
+                    attempt + 1,
+                    retries,
+                )
+                time.sleep(retry_delay)
+        raise SpaOfflineError(
+            f"Spa data does not contain 'currentState' after {retries} attempts"
+            " — the spa gateway may be offline"
         )
-        if response.status_code != requests.codes.ok:
-            logging.error("error from controlmyspa API: %s", response.text)
-            response.raise_for_status()
-        self._list = response.json()
-        self._info = self._list["data"]["spas"][self._spa_offset]
-        return self._info
 
     @property
     def current_temp(self):

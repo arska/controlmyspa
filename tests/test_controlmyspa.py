@@ -1,7 +1,8 @@
 import unittest
+import unittest.mock
 import base64
 
-from controlmyspa import ControlMySpa
+from controlmyspa import ControlMySpa, SpaOfflineError
 import responses
 
 
@@ -937,6 +938,46 @@ class ControlMySpaTestCase(unittest.TestCase):
         cms = ControlMySpa(self.exampleusername, self.examplepassword)
         # in the example dataset the spa is online
         self.assertEqual(cms.online, True)
+
+    @unittest.mock.patch("time.sleep")
+    def test_spa_offline_error_when_no_currentstate(self, mock_sleep):
+        """SpaOfflineError is raised after retries when API response lacks 'currentState'"""
+        # Remove currentState from the spa data
+        spa_data_no_state = self.list.copy()
+        spa_data_no_state["data"] = self.list["data"].copy()
+        spa_data_no_state["data"]["spas"] = [
+            {
+                k: v
+                for k, v in self.list["data"]["spas"][0].items()
+                if k != "currentState"
+            }
+        ]
+        # Reset and re-add responses with modified data
+        self.responses.reset()
+        self.responses.add(
+            responses.GET,
+            "https://iot.controlmyspa.com/idm/tokenEndpoint",
+            status=200,
+            json=self.idm,
+        )
+        self.responses.add(
+            responses.POST,
+            "https://iot.controlmyspa.com/auth/login",
+            status=200,
+            json=self.iam,
+        )
+        self.responses.add(
+            responses.GET,
+            "https://iot.controlmyspa.com/spas",
+            status=200,
+            json=spa_data_no_state,
+        )
+        with self.assertRaises(SpaOfflineError) as context:
+            ControlMySpa(self.exampleusername, self.examplepassword)
+        self.assertIn("currentState", str(context.exception))
+        # Verify it retried (3 attempts = 2 sleeps)
+        self.assertEqual(mock_sleep.call_count, 2)
+        mock_sleep.assert_called_with(5)
 
 
 if __name__ == "__main__":
