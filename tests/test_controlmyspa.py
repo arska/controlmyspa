@@ -979,6 +979,37 @@ class ControlMySpaTestCase(unittest.TestCase):
         self.assertEqual(mock_sleep.call_count, 2)
         mock_sleep.assert_called_with(5)
 
+    @unittest.mock.patch("time.sleep")
+    def test_spa_offline_error_when_currentstate_is_none(self, mock_sleep):
+        """SpaOfflineError is raised when currentState is None (gateway offline)."""
+        spa_data_null_state = self.list.copy()
+        spa_data_null_state["data"] = self.list["data"].copy()
+        spa_data_null_state["data"]["spas"] = [
+            {**self.list["data"]["spas"][0], "currentState": None}
+        ]
+        self.responses.reset()
+        self.responses.add(
+            responses.GET,
+            "https://iot.controlmyspa.com/idm/tokenEndpoint",
+            status=200,
+            json=self.idm,
+        )
+        self.responses.add(
+            responses.POST,
+            "https://iot.controlmyspa.com/auth/login",
+            status=200,
+            json=self.iam,
+        )
+        self.responses.add(
+            responses.GET,
+            "https://iot.controlmyspa.com/spas",
+            status=200,
+            json=spa_data_null_state,
+        )
+        with self.assertRaises(SpaOfflineError):
+            ControlMySpa(self.exampleusername, self.examplepassword)
+        self.assertEqual(mock_sleep.call_count, 2)
+
 
 if __name__ == "__main__":
     unittest.main()

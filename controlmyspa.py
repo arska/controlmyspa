@@ -114,7 +114,7 @@ class ControlMySpa:
                 response.raise_for_status()
             self._list = response.json()
             self._info = self._list["data"]["spas"][self._spa_offset]
-            if "currentState" in self._info:
+            if self._info.get("currentState"):
                 return self._info
             if attempt < retries - 1:
                 logging.warning(
