@@ -67,7 +67,7 @@ class ControlMySpa:
             "https://iot.controlmyspa.com/idm/tokenEndpoint", timeout=10
         )
         if response.status_code != requests.codes.ok:
-            logging.error("error from controlmyspa API: %s", response.text)
+            logging.warning("error from controlmyspa API: %s", response.text)
             response.raise_for_status()
         self._idm = response.json()
         return self._idm
@@ -91,7 +91,7 @@ class ControlMySpa:
             timeout=10,
         )
         if response.status_code != requests.codes.ok:
-            logging.error("error from controlmyspa API: %s", response.text)
+            logging.warning("error from controlmyspa API: %s", response.text)
             response.raise_for_status()
         self._iam = response.json()
         self._token = self._iam["data"]["accessToken"]
@@ -110,7 +110,7 @@ class ControlMySpa:
                 timeout=10,
             )
             if response.status_code != requests.codes.ok:
-                logging.error("error from controlmyspa API: %s", response.text)
+                logging.warning("error from controlmyspa API: %s", response.text)
                 response.raise_for_status()
             self._list = response.json()
             self._info = self._list["data"]["spas"][self._spa_offset]
@@ -173,7 +173,7 @@ class ControlMySpa:
             timeout=10,
         )
         if response.status_code != requests.codes.ok:
-            logging.error("error from controlmyspa API: %s", response.text)
+            logging.warning("error from controlmyspa API: %s", response.text)
             response.raise_for_status()
         # update the local info
         self._get_info()
@@ -204,7 +204,7 @@ class ControlMySpa:
             timeout=10,
         )
         if response.status_code != requests.codes.ok:
-            logging.error("error from controlmyspa API: %s", response.text)
+            logging.warning("error from controlmyspa API: %s", response.text)
             response.raise_for_status()
         # update the local info
         self._get_info()
@@ -235,7 +235,7 @@ class ControlMySpa:
             timeout=10,
         )
         if response.status_code != requests.codes.ok:
-            logging.error("error from controlmyspa API: %s", response.text)
+            logging.warning("error from controlmyspa API: %s", response.text)
             response.raise_for_status()
         # update the local info
         self._get_info()
@@ -266,7 +266,7 @@ class ControlMySpa:
             timeout=10,
         )
         if response.status_code != requests.codes.ok:
-            logging.error("error from controlmyspa API: %s", response.text)
+            logging.warning("error from controlmyspa API: %s", response.text)
             response.raise_for_status()
         # update the local info
         self._get_info()
@@ -303,7 +303,7 @@ class ControlMySpa:
             timeout=10,
         )
         if response.status_code != requests.codes.ok:
-            logging.error("error from controlmyspa API: %s", response.text)
+            logging.warning("error from controlmyspa API: %s", response.text)
             response.raise_for_status()
         # update the local info
         self._get_info()
@@ -384,7 +384,7 @@ class ControlMySpa:
             timeout=10,
         )
         if response.status_code != requests.codes.ok:
-            logging.error("error from controlmyspa API: %s", response.text)
+            logging.warning("error from controlmyspa API: %s", response.text)
             response.raise_for_status()
         # update the local info
         self._get_info()
@@ -441,7 +441,7 @@ class ControlMySpa:
             timeout=10,
         )
         if response.status_code != requests.codes.ok:
-            logging.error("error from controlmyspa API: %s", response.text)
+            logging.warning("error from controlmyspa API: %s", response.text)
             response.raise_for_status()
         # update the local info
         self._get_info()
