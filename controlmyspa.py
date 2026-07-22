@@ -55,39 +55,19 @@ class ControlMySpa:
                 outfile.close()
         """
         # log in and fetch pool info
-        self._get_idm()
         self._do_login()
         self._get_info()
-
-    def _get_idm(self):
-        """
-        Get URL and basic auth to log in to IDM
-        """
-        response = requests.get(
-            "https://iot.controlmyspa.com/idm/tokenEndpoint", timeout=10
-        )
-        if response.status_code != requests.codes.ok:
-            logging.warning("error from controlmyspa API: %s", response.text)
-            response.raise_for_status()
-        self._idm = response.json()
-        return self._idm
 
     def _do_login(self):
         """
         Log in and get API access tokens
         """
         response = requests.post(
-            self._idm["_links"]["tokenEndpoint"]["href"],
-            data={
-                "grant_type": "password",
-                "password": self._password,
-                "scope": "openid user_name",
+            "https://iot.controlmyspa.com/auth/login",
+            json={
                 "email": self._email,
+                "password": self._password,
             },
-            auth=(
-                self._idm["mobileClientId"],
-                self._idm["mobileClientSecret"],
-            ),
             timeout=10,
         )
         if response.status_code != requests.codes.ok:

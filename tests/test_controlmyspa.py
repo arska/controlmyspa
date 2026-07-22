@@ -1,6 +1,5 @@
 import unittest
 import unittest.mock
-import base64
 
 from controlmyspa import ControlMySpa, SpaOfflineError
 import responses
@@ -13,24 +12,6 @@ class ControlMySpaTestCase(unittest.TestCase):
     def setUp(self):
         self.responses = responses.RequestsMock()
         self.responses.start()
-        self.idm = {
-            "_links": {
-                "refreshEndpoint": {
-                    "href": "https://iamqacontrolmyspa.b2clogin.com/iamqacontrolmyspa.onmicrosoft.com/oauth2/v2.0/token?p=B2C_1_CMS_USER_PWD"
-                },
-                "tokenEndpoint": {"href": "https://iot.controlmyspa.com/auth/login"},
-                "whoami": {},
-            },
-            "mobileClientId": "abcd1234",
-            "mobileClientSecret": "abcd1234",
-        }
-
-        self.responses.add(
-            responses.GET,
-            "https://iot.controlmyspa.com/idm/tokenEndpoint",
-            status=200,
-            json=self.idm,
-        )
         self.iam = {
             "data": {
                 "accessToken": "12345678-9abc-def0-1234-56789abcdef0",
@@ -46,12 +27,10 @@ class ControlMySpaTestCase(unittest.TestCase):
             status=200,
             json=self.iam,
             match=[
-                responses.matchers.urlencoded_params_matcher(
+                responses.matchers.json_params_matcher(
                     {
-                        "grant_type": "password",
-                        "password": self.examplepassword,
-                        "scope": "openid user_name",
                         "email": self.exampleusername,
+                        "password": self.examplepassword,
                     }
                 )
             ],
@@ -514,28 +493,13 @@ class ControlMySpaTestCase(unittest.TestCase):
         cms = ControlMySpa(self.exampleusername, self.examplepassword)
         self.assertEqual(cms._email, self.exampleusername)
         self.assertEqual(cms._password, self.examplepassword)
-        # there should have been 4 API calls
-        self.assertAlmostEqual(len(self.responses.calls), 3, delta=1)
-        # test the basic auth of login
-        self.assertLessEqual(
-            {
-                "Authorization": "Basic "
-                + base64.b64encode(
-                    (
-                        self.idm["mobileClientId"]
-                        + ":"
-                        + self.idm["mobileClientSecret"]
-                    ).encode("ascii")
-                ).decode("ascii")
-            }.items(),
-            self.responses.calls[1].request.headers.items(),
-        )
+        # there should have been 2 API calls (login + spas)
+        self.assertEqual(len(self.responses.calls), 2)
         # test token authentication of spas
         self.assertLessEqual(
             {"Authorization": "Bearer 12345678-9abc-def0-1234-56789abcdef0"}.items(),
-            self.responses.calls[2].request.headers.items(),
+            self.responses.calls[1].request.headers.items(),
         )
-        self.assertDictEqual(cms._idm, self.idm)
         self.assertDictEqual(cms._iam, self.iam)
         self.assertDictEqual(cms._list, self.list)
 
@@ -955,12 +919,6 @@ class ControlMySpaTestCase(unittest.TestCase):
         # Reset and re-add responses with modified data
         self.responses.reset()
         self.responses.add(
-            responses.GET,
-            "https://iot.controlmyspa.com/idm/tokenEndpoint",
-            status=200,
-            json=self.idm,
-        )
-        self.responses.add(
             responses.POST,
             "https://iot.controlmyspa.com/auth/login",
             status=200,
@@ -988,12 +946,6 @@ class ControlMySpaTestCase(unittest.TestCase):
             {**self.list["data"]["spas"][0], "currentState": None}
         ]
         self.responses.reset()
-        self.responses.add(
-            responses.GET,
-            "https://iot.controlmyspa.com/idm/tokenEndpoint",
-            status=200,
-            json=self.idm,
-        )
         self.responses.add(
             responses.POST,
             "https://iot.controlmyspa.com/auth/login",
