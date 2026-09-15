@@ -1,8 +1,9 @@
 import unittest
 import unittest.mock
 
-from controlmyspa import ControlMySpa, SpaOfflineError
 import responses
+
+from controlmyspa import ControlMySpa, SpaOfflineError
 
 
 class ControlMySpaTestCase(unittest.TestCase):
