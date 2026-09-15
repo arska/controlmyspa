@@ -34,6 +34,8 @@ class ControlMySpa:
         self._email = email
         self._password = password
         self._spa_offset = spa_offset
+        self._spa_id = None
+        self._list = None
 
         """
         2023-12-13: iot.controlmyspa.com has a new TLS certificate, probably since
@@ -79,24 +81,70 @@ class ControlMySpa:
         self._token = self._iam["data"]["accessToken"]
         return self._iam
 
+    def _get_json(self, path):
+        """
+        GET an authenticated API path and return the decoded body
+        """
+        response = requests.get(
+            "https://iot.controlmyspa.com" + path,
+            headers={"Authorization": "Bearer " + self._token},
+            timeout=10,
+        )
+        if response.status_code != requests.codes.ok:
+            _LOGGER.warning("error from controlmyspa API: %s", response.text)
+            response.raise_for_status()
+        return response.json()
+
+    def _get_spa_id(self):
+        """
+        Look up the id of the selected spa. It does not change, so only once.
+        """
+        if self._spa_id is None:
+            self._list = self._get_json("/spas/owned")
+            self._spa_id = self._list["data"]["spas"][self._spa_offset]["_id"]
+        return self._spa_id
+
+    @staticmethod
+    def _current_state(dashboard):
+        """
+        Map the dashboard onto the legacy currentState names, or None when the
+        dashboard carries no reading
+        """
+        if not dashboard.get("hasCurrentState") or dashboard.get("currentTemp") in (
+            None,
+            "",
+        ):
+            return None
+        return {
+            "currentTemp": dashboard["currentTemp"],
+            "desiredTemp": dashboard["desiredTemp"],
+            "celsius": dashboard["isCelsius"],
+            "tempRange": dashboard["tempRange"],
+            "heaterMode": dashboard["heaterMode"],
+            "panelLock": dashboard["isPanelLocked"],
+            "online": dashboard["isOnline"],
+            "components": dashboard.get("components") or [],
+        }
+
     def _get_info(self, retries=3, retry_delay=5):
         """
         Get all the details for the whirlpool of the logged in user.
         Retries a few times if currentState is missing (gateway may be temporarily offline).
+
+        Since 2026-08 the API no longer serves GET /spas. The spa is looked up
+        via /spas/owned and read via /spas/{id}/dashboard, whose fields are
+        mapped back onto the legacy currentState so callers see no change.
         """
+        spa_id = self._get_spa_id()
         for attempt in range(retries):
-            response = requests.get(
-                "https://iot.controlmyspa.com/spas",
-                params={"username": self._email},
-                headers={"Authorization": "Bearer " + self._token},
-                timeout=10,
-            )
-            if response.status_code != requests.codes.ok:
-                _LOGGER.warning("error from controlmyspa API: %s", response.text)
-                response.raise_for_status()
-            self._list = response.json()
-            self._info = self._list["data"]["spas"][self._spa_offset]
-            if self._info.get("currentState"):
+            dashboard = self._get_json(f"/spas/{spa_id}/dashboard")["data"]
+            self._info = {
+                "_id": spa_id,
+                "serialNumber": dashboard.get("serialNumber"),
+                "currentState": self._current_state(dashboard),
+                "dashboard": dashboard,
+            }
+            if self._info["currentState"]:
                 return self._info
             if attempt < retries - 1:
                 _LOGGER.warning(

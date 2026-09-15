@@ -473,36 +473,113 @@ class ControlMySpaTestCase(unittest.TestCase):
             "statusCode": 200,
         }
 
-        self.responses.add(
-            responses.GET,
-            "https://iot.controlmyspa.com/spas",
-            match=[
-                responses.matchers.query_param_matcher(
+        # Since 2026-08 the API no longer serves GET /spas. The spa is found
+        # via /spas/owned and read via /spas/{id}/dashboard, which carries the
+        # same state flattened, under new names. The fixtures below are built
+        # from the legacy currentState above, so every assertion keeps its value.
+        spa = self.list["data"]["spas"][0]
+        state = spa["currentState"]
+        self.owned = {
+            "data": {
+                "spas": [
                     {
-                        "username": self.exampleusername,
+                        "_id": spa["_id"],
+                        "serialNumber": spa["serialNumber"],
+                        "alias": None,
+                        "isDefault": True,
+                        "businessLogoUrl": "",
+                        "cmsCode": "abcd1234",
                     }
-                )
-            ],
-            status=200,
-            json=self.list,
-        )
+                ]
+            },
+            "message": "Spas retrieved successfully.",
+            "statusCode": 200,
+        }
+        self.dashboard = {
+            "data": {
+                "serialNumber": spa["serialNumber"],
+                "currentTemp": state["currentTemp"],
+                "desiredTemp": state["desiredTemp"],
+                "time": "12:5",
+                "isOnHold": False,
+                "isMilitaryTime": True,
+                "isPanelLocked": state["panelLock"],
+                "heaterMode": state["heaterMode"],
+                "tempRange": state["tempRange"],
+                "isCelsius": state["celsius"],
+                "components": state["components"],
+                "isOnline": state["online"],
+                "hasCurrentState": True,
+                "totalAlerts": 0,
+                "controllerType": "NGSC",
+            },
+            "message": "Spa's dashboard retrieved successfully.",
+            "statusCode": 200,
+        }
+        self.add_spa_responses(self.dashboard)
 
         self.addCleanup(self.responses.stop)
         self.addCleanup(self.responses.reset)
+
+    def add_spa_responses(self, dashboard):
+        """Register the spa lookup and a dashboard response."""
+        self.responses.add(
+            responses.GET,
+            "https://iot.controlmyspa.com/spas/owned",
+            status=200,
+            json=self.owned,
+        )
+        self.responses.add(
+            responses.GET,
+            "https://iot.controlmyspa.com/spas/abcd1234/dashboard",
+            status=200,
+            json=dashboard,
+        )
 
     def test_init_config(self):
         cms = ControlMySpa(self.exampleusername, self.examplepassword)
         self.assertEqual(cms._email, self.exampleusername)
         self.assertEqual(cms._password, self.examplepassword)
-        # there should have been 2 API calls (login + spas)
-        self.assertEqual(len(self.responses.calls), 2)
-        # test token authentication of spas
-        self.assertLessEqual(
-            {"Authorization": "Bearer 12345678-9abc-def0-1234-56789abcdef0"}.items(),
-            self.responses.calls[1].request.headers.items(),
+        # login, spa lookup, dashboard
+        self.assertEqual(
+            [call.request.path_url for call in self.responses.calls],
+            ["/auth/login", "/spas/owned", "/spas/abcd1234/dashboard"],
         )
+        # both spa calls authenticate with the token
+        for call in self.responses.calls[1:]:
+            self.assertLessEqual(
+                {
+                    "Authorization": "Bearer 12345678-9abc-def0-1234-56789abcdef0"
+                }.items(),
+                call.request.headers.items(),
+            )
         self.assertDictEqual(cms._iam, self.iam)
-        self.assertDictEqual(cms._list, self.list)
+        self.assertDictEqual(cms._list, self.owned)
+        self.assertEqual(cms._info["_id"], "abcd1234")
+
+    def test_refresh_after_command_does_not_look_up_the_spa_again(self):
+        cms = ControlMySpa(self.exampleusername, self.examplepassword)
+        self.responses.add(
+            responses.POST,
+            "https://iot.controlmyspa.com/spa-commands/temperature/value",
+            json={},
+        )
+        cms.desired_temp = 36
+        paths = [call.request.path_url for call in self.responses.calls]
+        self.assertEqual(paths.count("/spas/owned"), 1)
+        self.assertEqual(paths.count("/spas/abcd1234/dashboard"), 2)
+
+    def test_spa_offset_selects_the_owned_spa(self):
+        self.owned["data"]["spas"].insert(0, {"_id": "other", "serialNumber": "x"})
+        self.serve_spa()
+        cms = ControlMySpa(self.exampleusername, self.examplepassword, spa_offset=1)
+        self.assertEqual(cms._info["_id"], "abcd1234")
+
+    def test_no_owned_spa_raises(self):
+        self.owned["data"]["spas"] = []
+        self.serve_spa()
+        with self.assertRaises(IndexError):
+            ControlMySpa(self.exampleusername, self.examplepassword)
 
     def test_current_temp_get(self):
         cms = ControlMySpa(self.exampleusername, self.examplepassword)
@@ -904,20 +981,9 @@ class ControlMySpaTestCase(unittest.TestCase):
         # in the example dataset the spa is online
         self.assertEqual(cms.online, True)
 
-    @unittest.mock.patch("time.sleep")
-    def test_spa_offline_error_when_no_currentstate(self, mock_sleep):
-        """SpaOfflineError is raised after retries when API response lacks 'currentState'"""
-        # Remove currentState from the spa data
-        spa_data_no_state = self.list.copy()
-        spa_data_no_state["data"] = self.list["data"].copy()
-        spa_data_no_state["data"]["spas"] = [
-            {
-                k: v
-                for k, v in self.list["data"]["spas"][0].items()
-                if k != "currentState"
-            }
-        ]
-        # Reset and re-add responses with modified data
+    def serve_spa(self, **changes):
+        """Serve self.owned and a dashboard with `changes` applied, on a fresh mock."""
+        dashboard = {**self.dashboard, "data": {**self.dashboard["data"], **changes}}
         self.responses.reset()
         self.responses.add(
             responses.POST,
@@ -925,12 +991,12 @@ class ControlMySpaTestCase(unittest.TestCase):
             status=200,
             json=self.iam,
         )
-        self.responses.add(
-            responses.GET,
-            "https://iot.controlmyspa.com/spas",
-            status=200,
-            json=spa_data_no_state,
-        )
+        self.add_spa_responses(dashboard)
+
+    @unittest.mock.patch("time.sleep")
+    def test_spa_offline_error_when_no_currentstate(self, mock_sleep):
+        """SpaOfflineError is raised after retries when the spa has no current state."""
+        self.serve_spa(hasCurrentState=False)
         with self.assertRaises(SpaOfflineError) as context:
             ControlMySpa(self.exampleusername, self.examplepassword)
         self.assertIn("currentState", str(context.exception))
@@ -939,29 +1005,19 @@ class ControlMySpaTestCase(unittest.TestCase):
         mock_sleep.assert_called_with(5)
 
     @unittest.mock.patch("time.sleep")
-    def test_spa_offline_error_when_currentstate_is_none(self, mock_sleep):
-        """SpaOfflineError is raised when currentState is None (gateway offline)."""
-        spa_data_null_state = self.list.copy()
-        spa_data_null_state["data"] = self.list["data"].copy()
-        spa_data_null_state["data"]["spas"] = [
-            {**self.list["data"]["spas"][0], "currentState": None}
-        ]
-        self.responses.reset()
-        self.responses.add(
-            responses.POST,
-            "https://iot.controlmyspa.com/auth/login",
-            status=200,
-            json=self.iam,
-        )
-        self.responses.add(
-            responses.GET,
-            "https://iot.controlmyspa.com/spas",
-            status=200,
-            json=spa_data_null_state,
-        )
+    def test_spa_offline_error_when_temperature_is_empty(self, mock_sleep):
+        """An empty temperature is no reading: raise instead of returning junk."""
+        self.serve_spa(currentTemp="")
         with self.assertRaises(SpaOfflineError):
             ControlMySpa(self.exampleusername, self.examplepassword)
         self.assertEqual(mock_sleep.call_count, 2)
+
+    def test_offline_flag_is_reported_not_raised(self):
+        """isOnline=False with a current state is data, as `online` was before."""
+        self.serve_spa(isOnline=False)
+        cms = ControlMySpa(self.exampleusername, self.examplepassword)
+        self.assertEqual(cms.online, False)
+        self.assertEqual(cms.current_temp, 31)
 
 
 if __name__ == "__main__":
