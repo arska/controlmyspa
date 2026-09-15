@@ -31,7 +31,7 @@ else:
         logging.WARNING
     )
 
-logging.debug("starting with arguments: %s", ARGS)
+logging.getLogger(__name__).debug("starting with arguments: %s", ARGS)
 
 API = ControlMySpa(ARGS.email, ARGS.password)
 

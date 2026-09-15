@@ -6,9 +6,9 @@ use e.g. with "python debug.py user@example.com myverysecretpassword"
 
 import argparse
 import logging
+import pprint
 
 from controlmyspa import ControlMySpa
-import pprint
 
 PARSER = argparse.ArgumentParser(description="Get metrics from Balboa Controlmyspa")
 PARSER.add_argument(
@@ -32,7 +32,7 @@ else:
         logging.WARNING
     )
 
-logging.debug("starting with arguments: %s", ARGS)
+logging.getLogger(__name__).debug("starting with arguments: %s", ARGS)
 
 API = ControlMySpa(ARGS.email, ARGS.password)
 info = API._info

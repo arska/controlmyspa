@@ -7,6 +7,8 @@ import time
 
 import requests
 
+_LOGGER = logging.getLogger(__name__)
+
 
 class SpaOfflineError(Exception):
     """Raised when the spa API response does not contain 'currentState',
@@ -71,7 +73,7 @@ class ControlMySpa:
             timeout=10,
         )
         if response.status_code != requests.codes.ok:
-            logging.warning("error from controlmyspa API: %s", response.text)
+            _LOGGER.warning("error from controlmyspa API: %s", response.text)
             response.raise_for_status()
         self._iam = response.json()
         self._token = self._iam["data"]["accessToken"]
@@ -90,14 +92,14 @@ class ControlMySpa:
                 timeout=10,
             )
             if response.status_code != requests.codes.ok:
-                logging.warning("error from controlmyspa API: %s", response.text)
+                _LOGGER.warning("error from controlmyspa API: %s", response.text)
                 response.raise_for_status()
             self._list = response.json()
             self._info = self._list["data"]["spas"][self._spa_offset]
             if self._info.get("currentState"):
                 return self._info
             if attempt < retries - 1:
-                logging.warning(
+                _LOGGER.warning(
                     "Spa data missing 'currentState', retrying in %ds (%d/%d)",
                     retry_delay,
                     attempt + 1,
@@ -153,7 +155,7 @@ class ControlMySpa:
             timeout=10,
         )
         if response.status_code != requests.codes.ok:
-            logging.warning("error from controlmyspa API: %s", response.text)
+            _LOGGER.warning("error from controlmyspa API: %s", response.text)
             response.raise_for_status()
         # update the local info
         self._get_info()
@@ -184,7 +186,7 @@ class ControlMySpa:
             timeout=10,
         )
         if response.status_code != requests.codes.ok:
-            logging.warning("error from controlmyspa API: %s", response.text)
+            _LOGGER.warning("error from controlmyspa API: %s", response.text)
             response.raise_for_status()
         # update the local info
         self._get_info()
@@ -215,7 +217,7 @@ class ControlMySpa:
             timeout=10,
         )
         if response.status_code != requests.codes.ok:
-            logging.warning("error from controlmyspa API: %s", response.text)
+            _LOGGER.warning("error from controlmyspa API: %s", response.text)
             response.raise_for_status()
         # update the local info
         self._get_info()
@@ -246,7 +248,7 @@ class ControlMySpa:
             timeout=10,
         )
         if response.status_code != requests.codes.ok:
-            logging.warning("error from controlmyspa API: %s", response.text)
+            _LOGGER.warning("error from controlmyspa API: %s", response.text)
             response.raise_for_status()
         # update the local info
         self._get_info()
@@ -258,11 +260,11 @@ class ControlMySpa:
         """
         # update fresh info
         # self._get_info()
-        return [
+        return next(
             x["value"] == "HIGH"
             for x in self._info["currentState"]["components"]
             if x["componentType"] == "PUMP" and x["port"] == str(jet_number)
-        ][0]
+        )
 
     def set_jet(self, jet_number=0, state=False):
         """
@@ -283,7 +285,7 @@ class ControlMySpa:
             timeout=10,
         )
         if response.status_code != requests.codes.ok:
-            logging.warning("error from controlmyspa API: %s", response.text)
+            _LOGGER.warning("error from controlmyspa API: %s", response.text)
             response.raise_for_status()
         # update the local info
         self._get_info()
@@ -339,11 +341,11 @@ class ControlMySpa:
         """
         # update fresh info
         # self._get_info()
-        return [
+        return next(
             x["value"] == "HIGH"
             for x in self._info["currentState"]["components"]
             if x["componentType"] == "BLOWER" and x["port"] == str(blower_number)
-        ][0]
+        )
 
     def set_blower(self, blower_number=0, state=False):
         """
@@ -364,7 +366,7 @@ class ControlMySpa:
             timeout=10,
         )
         if response.status_code != requests.codes.ok:
-            logging.warning("error from controlmyspa API: %s", response.text)
+            _LOGGER.warning("error from controlmyspa API: %s", response.text)
             response.raise_for_status()
         # update the local info
         self._get_info()
@@ -396,11 +398,11 @@ class ControlMySpa:
         """
         # update fresh info
         # self._get_info()
-        return [
+        return next(
             x["value"] == "HIGH"
             for x in self._info["currentState"]["components"]
             if x["componentType"] == "LIGHT" and x["port"] == str(light_number)
-        ][0]
+        )
 
     def set_light(self, light_number=0, state=False):
         """
@@ -421,7 +423,7 @@ class ControlMySpa:
             timeout=10,
         )
         if response.status_code != requests.codes.ok:
-            logging.warning("error from controlmyspa API: %s", response.text)
+            _LOGGER.warning("error from controlmyspa API: %s", response.text)
             response.raise_for_status()
         # update the local info
         self._get_info()
