@@ -2,6 +2,7 @@
 Python module to get metrics from and control Balboa ControlMySpa whirlpools
 """
 
+import http
 import logging
 import time
 
@@ -60,7 +61,7 @@ class ControlMySpa:
         """
         # log in and fetch pool info
         self._do_login()
-        self._get_info()
+        self.refresh()
 
     def _do_login(self):
         """
@@ -81,19 +82,48 @@ class ControlMySpa:
         self._token = self._iam["data"]["accessToken"]
         return self._iam
 
-    def _get_json(self, path):
+    def _send(self, method, path, **kwargs):
         """
-        GET an authenticated API path and return the decoded body
+        Make one authenticated request, without inspecting the result
         """
-        response = requests.get(
+        return requests.request(
+            method,
             "https://iot.controlmyspa.com" + path,
             headers={"Authorization": "Bearer " + self._token},
             timeout=10,
+            **kwargs,
         )
+
+    def _request(self, method, path, **kwargs):
+        """
+        Make an authenticated request, logging in again if the token expired.
+
+        A client that outlives its access token gets a 401 that is not a
+        failure to report: it means log in and make the call again. A second
+        401 in a row is a real one and raises, so credentials that are simply
+        wrong do not turn into a login loop.
+        """
+        response = self._send(method, path, **kwargs)
+        if response.status_code == http.HTTPStatus.UNAUTHORIZED:
+            _LOGGER.info("access token rejected, logging in again")
+            self._do_login()
+            response = self._send(method, path, **kwargs)
         if response.status_code != requests.codes.ok:
             _LOGGER.warning("error from controlmyspa API: %s", response.text)
             response.raise_for_status()
         return response.json()
+
+    def _get_json(self, path):
+        """
+        GET an authenticated API path and return the decoded body
+        """
+        return self._request("GET", path)
+
+    def _post_json(self, path, payload):
+        """
+        POST a command to an authenticated API path and return the decoded body
+        """
+        return self._request("POST", path, json=payload)
 
     def _get_spa_id(self):
         """
@@ -126,9 +156,14 @@ class ControlMySpa:
             "components": dashboard.get("components") or [],
         }
 
-    def _get_info(self, retries=3, retry_delay=5):
+    def refresh(self, retries=3, retry_delay=5):
         """
-        Get all the details for the whirlpool of the logged in user.
+        Re-read the spa state over the existing session.
+
+        A caller that keeps the client alive calls this instead of building a
+        new one: the token and the spa id are already known, so it costs one
+        request instead of three.
+
         Retries a few times if currentState is missing (gateway may be temporarily offline).
 
         Since 2026-08 the API no longer serves GET /spas. The spa is looked up
@@ -160,12 +195,23 @@ class ControlMySpa:
         )
 
     @property
+    def info(self):
+        """
+        The spa state as the API returned it, as of the last refresh().
+
+        The shape is Balboa's, not this library's, and can change without
+        notice; the typed properties below are the stable way to read a
+        value. This is here for logging and debugging.
+        """
+        return self._info
+
+    @property
     def current_temp(self):
         """
         Get current pool temperature, in celsius or farenheit according to spa settings
         """
         # update fresh info
-        # self._get_info()
+        # self.refresh()
         if self._info["currentState"]["celsius"]:
             return round(
                 (float(self._info["currentState"]["currentTemp"]) - 32) * 5 / 9, 1
@@ -178,7 +224,7 @@ class ControlMySpa:
         Get desired pool temperature, in celsius or farenheit according to spa settings
         """
         # update fresh info
-        # self._get_info()
+        # self.refresh()
         if self._info["currentState"]["celsius"]:
             return round(
                 (float(self._info["currentState"]["desiredTemp"]) - 32) * 5 / 9, 1
@@ -196,17 +242,12 @@ class ControlMySpa:
         if self._info["currentState"]["celsius"]:
             # convert to fahrenheit since the API always expects fahrenheit
             temperature = round(temperature / 5 * 9 + 32, 1)
-        response = requests.post(
-            "https://iot.controlmyspa.com/spa-commands/temperature/value",
-            json={"value": temperature, "spaId": self._info["_id"], "via": "MOBILE"},
-            headers={"Authorization": "Bearer " + self._token},
-            timeout=10,
+        self._post_json(
+            "/spa-commands/temperature/value",
+            {"value": temperature, "spaId": self._info["_id"], "via": "MOBILE"},
         )
-        if response.status_code != requests.codes.ok:
-            _LOGGER.warning("error from controlmyspa API: %s", response.text)
-            response.raise_for_status()
         # update the local info
-        self._get_info()
+        self.refresh()
 
     @property
     def temp_range(self):
@@ -214,7 +255,7 @@ class ControlMySpa:
         Get temp range HIGH (True) or LOW (False)
         """
         # update fresh info
-        # self._get_info()
+        # self.refresh()
         return self._info["currentState"]["tempRange"] == "HIGH"
 
     @temp_range.setter
@@ -223,21 +264,16 @@ class ControlMySpa:
         Set temp range HIGH or LOW
         :param temp_range: True for HIGH, False for LOW
         """
-        response = requests.post(
-            "https://iot.controlmyspa.com/spa-commands/temperature/range",
-            json={
+        self._post_json(
+            "/spa-commands/temperature/range",
+            {
                 "range": ("HIGH" if temp_range else "LOW"),
                 "spaId": self._info["_id"],
                 "via": "MOBILE",
             },
-            headers={"Authorization": "Bearer " + self._token},
-            timeout=10,
         )
-        if response.status_code != requests.codes.ok:
-            _LOGGER.warning("error from controlmyspa API: %s", response.text)
-            response.raise_for_status()
         # update the local info
-        self._get_info()
+        self.refresh()
 
     @property
     def heater_mode(self):
@@ -245,7 +281,7 @@ class ControlMySpa:
         Get heater mode of spa READY (True) or REST (False)
         """
         # update fresh info
-        # self._get_info()
+        # self.refresh()
         return self._info["currentState"]["heaterMode"] == "READY"
 
     @heater_mode.setter
@@ -254,21 +290,16 @@ class ControlMySpa:
         Set heater mode READY or REST
         :param heater_mode: True for READY, False for REST
         """
-        response = requests.post(
-            "https://iot.controlmyspa.com/spa-commands/temperature/heater-mode",
-            json={
+        self._post_json(
+            "/spa-commands/temperature/heater-mode",
+            {
                 "mode": ("READY" if heater_mode else "REST"),
                 "spaId": self._info["_id"],
                 "via": "MOBILE",
             },
-            headers={"Authorization": "Bearer " + self._token},
-            timeout=10,
         )
-        if response.status_code != requests.codes.ok:
-            _LOGGER.warning("error from controlmyspa API: %s", response.text)
-            response.raise_for_status()
         # update the local info
-        self._get_info()
+        self.refresh()
 
     @property
     def panel_lock(self):
@@ -276,7 +307,7 @@ class ControlMySpa:
         Get panel lock status, Locked = True, unlocked = False
         """
         # update fresh info
-        # self._get_info()
+        # self.refresh()
         return self._info["currentState"]["panelLock"]
 
     @panel_lock.setter
@@ -285,21 +316,16 @@ class ControlMySpa:
         Set panel lock
         :param lock: True for locked, False for unlocked
         """
-        response = requests.post(
-            "https://iot.controlmyspa.com/spa-commands/panel/state",
-            json={
+        self._post_json(
+            "/spa-commands/panel/state",
+            {
                 "state": ("LOCK_PANEL" if lock else "UNLOCK_PANEL"),
                 "spaId": self._info["_id"],
                 "via": "MOBILE",
             },
-            headers={"Authorization": "Bearer " + self._token},
-            timeout=10,
         )
-        if response.status_code != requests.codes.ok:
-            _LOGGER.warning("error from controlmyspa API: %s", response.text)
-            response.raise_for_status()
         # update the local info
-        self._get_info()
+        self.refresh()
 
     def get_jet(self, jet_number=0):
         """
@@ -307,7 +333,7 @@ class ControlMySpa:
         :param jet_number: My pool has jets 0, 1 and 2
         """
         # update fresh info
-        # self._get_info()
+        # self.refresh()
         return next(
             x["value"] == "HIGH"
             for x in self._info["currentState"]["components"]
@@ -320,23 +346,18 @@ class ControlMySpa:
         :param jet_number: My pool has jets 0, 1 and 2
         :param state: False to furn off, True to turn on
         """
-        response = requests.post(
-            "https://iot.controlmyspa.com/spa-command/component-state",
-            json={
+        self._post_json(
+            "/spa-command/component-state",
+            {
                 "state": ("HIGH" if state else "OFF"),
                 "deviceNumber": jet_number,
                 "componentType": "jet",
                 "spaId": self._info["_id"],
                 "via": "MOBILE",
             },
-            headers={"Authorization": "Bearer " + self._token},
-            timeout=10,
         )
-        if response.status_code != requests.codes.ok:
-            _LOGGER.warning("error from controlmyspa API: %s", response.text)
-            response.raise_for_status()
         # update the local info
-        self._get_info()
+        self.refresh()
 
     @property
     def jets(self):
@@ -388,7 +409,7 @@ class ControlMySpa:
         :param blower_number: My pool has no blowers
         """
         # update fresh info
-        # self._get_info()
+        # self.refresh()
         return next(
             x["value"] == "HIGH"
             for x in self._info["currentState"]["components"]
@@ -401,23 +422,18 @@ class ControlMySpa:
         :param blower_number: blower number starting at 0
         :param state: False to furn off, True to turn on
         """
-        response = requests.post(
-            "https://iot.controlmyspa.com/spa-command/component-state",
-            json={
+        self._post_json(
+            "/spa-command/component-state",
+            {
                 "state": ("HIGH" if state else "OFF"),
                 "deviceNumber": blower_number,
                 "componentType": "blower",
                 "spaId": self._info["_id"],
                 "via": "MOBILE",
             },
-            headers={"Authorization": "Bearer " + self._token},
-            timeout=10,
         )
-        if response.status_code != requests.codes.ok:
-            _LOGGER.warning("error from controlmyspa API: %s", response.text)
-            response.raise_for_status()
         # update the local info
-        self._get_info()
+        self.refresh()
 
     @property
     def blowers(self):
@@ -445,7 +461,7 @@ class ControlMySpa:
         :param light_number: My pool has light 0
         """
         # update fresh info
-        # self._get_info()
+        # self.refresh()
         return next(
             x["value"] == "HIGH"
             for x in self._info["currentState"]["components"]
@@ -458,23 +474,18 @@ class ControlMySpa:
         :param jet_number: My pool has lights 0, 1 and 2
         :param state: False to furn off, True to turn on
         """
-        response = requests.post(
-            "https://iot.controlmyspa.com/spa-command/component-state",
-            json={
+        self._post_json(
+            "/spa-command/component-state",
+            {
                 "state": ("HIGH" if state else "OFF"),
                 "deviceNumber": light_number,
                 "componentType": "light",
                 "spaId": self._info["_id"],
                 "via": "MOBILE",
             },
-            headers={"Authorization": "Bearer " + self._token},
-            timeout=10,
         )
-        if response.status_code != requests.codes.ok:
-            _LOGGER.warning("error from controlmyspa API: %s", response.text)
-            response.raise_for_status()
         # update the local info
-        self._get_info()
+        self.refresh()
 
     @property
     def lights(self):

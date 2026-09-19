@@ -21,7 +21,7 @@ see example.py for a runnable example
 from controlmyspa import ControlMySpa
 
 API = ControlMySpa("user@example.com", "myverysecretpassword")
-pprint.pprint(API._info)
+pprint.pprint(API.info)
 ```
 
 ## References
