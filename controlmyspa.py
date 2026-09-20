@@ -210,8 +210,6 @@ class ControlMySpa:
         """
         Get current pool temperature, in celsius or farenheit according to spa settings
         """
-        # update fresh info
-        # self.refresh()
         if self._info["currentState"]["celsius"]:
             return round(
                 (float(self._info["currentState"]["currentTemp"]) - 32) * 5 / 9, 1
@@ -223,8 +221,6 @@ class ControlMySpa:
         """
         Get desired pool temperature, in celsius or farenheit according to spa settings
         """
-        # update fresh info
-        # self.refresh()
         if self._info["currentState"]["celsius"]:
             return round(
                 (float(self._info["currentState"]["desiredTemp"]) - 32) * 5 / 9, 1
@@ -254,8 +250,6 @@ class ControlMySpa:
         """
         Get temp range HIGH (True) or LOW (False)
         """
-        # update fresh info
-        # self.refresh()
         return self._info["currentState"]["tempRange"] == "HIGH"
 
     @temp_range.setter
@@ -280,8 +274,6 @@ class ControlMySpa:
         """
         Get heater mode of spa READY (True) or REST (False)
         """
-        # update fresh info
-        # self.refresh()
         return self._info["currentState"]["heaterMode"] == "READY"
 
     @heater_mode.setter
@@ -306,8 +298,6 @@ class ControlMySpa:
         """
         Get panel lock status, Locked = True, unlocked = False
         """
-        # update fresh info
-        # self.refresh()
         return self._info["currentState"]["panelLock"]
 
     @panel_lock.setter
@@ -332,8 +322,6 @@ class ControlMySpa:
         get jet state HIGH = True, OFF = False
         :param jet_number: My pool has jets 0, 1 and 2
         """
-        # update fresh info
-        # self.refresh()
         return next(
             x["value"] == "HIGH"
             for x in self._info["currentState"]["components"]
@@ -408,8 +396,6 @@ class ControlMySpa:
         get blower state HIGH = True, OFF = False
         :param blower_number: My pool has no blowers
         """
-        # update fresh info
-        # self.refresh()
         return next(
             x["value"] == "HIGH"
             for x in self._info["currentState"]["components"]
@@ -460,8 +446,6 @@ class ControlMySpa:
         get light state HIGH = True, OFF = False
         :param light_number: My pool has light 0
         """
-        # update fresh info
-        # self.refresh()
         return next(
             x["value"] == "HIGH"
             for x in self._info["currentState"]["components"]
