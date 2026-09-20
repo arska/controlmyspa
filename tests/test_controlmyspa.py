@@ -1,6 +1,7 @@
 import unittest
 import unittest.mock
 
+import requests
 import responses
 
 from controlmyspa import ControlMySpa, SpaOfflineError
@@ -1018,6 +1019,117 @@ class ControlMySpaTestCase(unittest.TestCase):
         cms = ControlMySpa(self.exampleusername, self.examplepassword)
         self.assertEqual(cms.online, False)
         self.assertEqual(cms.current_temp, 31)
+
+    def test_refresh_rereads_over_the_existing_session(self):
+        """A long-lived client re-reads with one request, not three."""
+        cms = ControlMySpa(self.exampleusername, self.examplepassword)
+        self.responses.add(
+            responses.GET,
+            "https://iot.controlmyspa.com/spas/abcd1234/dashboard",
+            status=200,
+            json=self.dashboard,
+        )
+        before = len(self.responses.calls)
+        cms.refresh()
+        self.assertEqual(
+            [call.request.path_url for call in self.responses.calls[before:]],
+            ["/spas/abcd1234/dashboard"],
+        )
+
+    def test_refresh_picks_up_the_new_reading(self):
+        """The point of refreshing: the properties see the newer values."""
+        cms = ControlMySpa(self.exampleusername, self.examplepassword)
+        self.assertEqual(cms.current_temp, 31)
+        self.responses.add(
+            responses.GET,
+            "https://iot.controlmyspa.com/spas/abcd1234/dashboard",
+            status=200,
+            json={
+                **self.dashboard,
+                "data": {**self.dashboard["data"], "currentTemp": 100.4},
+            },
+        )
+        cms.refresh()
+        self.assertEqual(cms.current_temp, 38)
+
+    def test_info_exposes_the_payload(self):
+        """Callers log the raw state without reaching for a private."""
+        cms = ControlMySpa(self.exampleusername, self.examplepassword)
+        self.assertEqual(cms.info["_id"], "abcd1234")
+        self.assertEqual(cms.info["serialNumber"], "abcd1234")
+        self.assertIn("currentState", cms.info)
+
+    def test_expired_token_is_renewed_once(self):
+        """A 401 on a long-lived client means log in again, not fail."""
+        cms = ControlMySpa(self.exampleusername, self.examplepassword)
+        self.responses.add(
+            responses.GET,
+            "https://iot.controlmyspa.com/spas/abcd1234/dashboard",
+            status=401,
+            json={"message": "Unauthorized", "statusCode": 401},
+        )
+        self.responses.add(
+            responses.GET,
+            "https://iot.controlmyspa.com/spas/abcd1234/dashboard",
+            status=200,
+            json=self.dashboard,
+        )
+        before = len(self.responses.calls)
+        cms.refresh()
+        self.assertEqual(
+            [call.request.path_url for call in self.responses.calls[before:]],
+            ["/spas/abcd1234/dashboard", "/auth/login", "/spas/abcd1234/dashboard"],
+        )
+
+    def test_a_second_unauthorized_raises(self):
+        """One re-login, not a loop: the credentials themselves may be wrong."""
+        cms = ControlMySpa(self.exampleusername, self.examplepassword)
+        self.responses.add(
+            responses.GET,
+            "https://iot.controlmyspa.com/spas/abcd1234/dashboard",
+            status=401,
+            json={"message": "Unauthorized", "statusCode": 401},
+        )
+        before = len(self.responses.calls)
+        with self.assertRaises(requests.exceptions.HTTPError):
+            cms.refresh()
+        self.assertEqual(
+            [call.request.path_url for call in self.responses.calls[before:]],
+            ["/spas/abcd1234/dashboard", "/auth/login", "/spas/abcd1234/dashboard"],
+        )
+
+    def test_expired_token_is_renewed_on_a_command(self):
+        """Writes go through the same re-login as reads."""
+        cms = ControlMySpa(self.exampleusername, self.examplepassword)
+        self.responses.add(
+            responses.POST,
+            "https://iot.controlmyspa.com/spa-commands/temperature/value",
+            status=401,
+            json={"message": "Unauthorized", "statusCode": 401},
+        )
+        self.responses.add(
+            responses.POST,
+            "https://iot.controlmyspa.com/spa-commands/temperature/value",
+            status=200,
+            json={},
+        )
+        self.responses.add(
+            responses.GET,
+            "https://iot.controlmyspa.com/spas/abcd1234/dashboard",
+            status=200,
+            json=self.dashboard,
+        )
+        before = len(self.responses.calls)
+        cms.desired_temp = 36
+        self.assertEqual(
+            [call.request.path_url for call in self.responses.calls[before:]],
+            [
+                "/spa-commands/temperature/value",
+                "/auth/login",
+                "/spa-commands/temperature/value",
+                "/spas/abcd1234/dashboard",
+            ],
+        )
 
 
 if __name__ == "__main__":

@@ -35,7 +35,7 @@ else:
 logging.getLogger(__name__).debug("starting with arguments: %s", ARGS)
 
 API = ControlMySpa(ARGS.email, ARGS.password)
-info = API._info
+info = API.info
 
 # remove potentially sensitive information
 del info["ownerId"]
@@ -44,4 +44,4 @@ del info["serialNumber"]
 del info["_id"]
 
 # print remaining data
-pprint.pprint(API._info)
+pprint.pprint(API.info)
